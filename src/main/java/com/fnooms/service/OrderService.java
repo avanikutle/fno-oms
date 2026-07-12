@@ -53,7 +53,7 @@ public class OrderService {
 
         // ── ASYNC: persist to DB (fire-and-forget, never blocks) ─────────
         OrderEventBus.getInstance().publish(
-                new OrderEvent(OrderEvent.Type.PLACED, request, response, activeCfg.getId()));
+                new OrderEvent(OrderEvent.Type.PLACED, request, response, activeCfg.getBrokerType(), activeCfg.getId()));
 
         AuditEventBus.getInstance().publish(
                 new AuditEvent("PLACE_ORDER", activeCfg.getBrokerType(),

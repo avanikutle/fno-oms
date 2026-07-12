@@ -16,13 +16,15 @@ public class OrderEvent {
     private final Type          type;
     private final OrderRequest  request;
     private final OrderResponse response;
+    private final String        brokerType;
     private final int           brokerConfigId;
     private final Instant       eventTime;
 
-    public OrderEvent(Type type, OrderRequest request, OrderResponse response, int brokerConfigId) {
+    public OrderEvent(Type type, OrderRequest request, OrderResponse response, String brokerType, int brokerConfigId) {
         this.type           = type;
         this.request        = request;
         this.response       = response;
+        this.brokerType     = brokerType;
         this.brokerConfigId = brokerConfigId;
         this.eventTime      = Instant.now();
     }
@@ -30,6 +32,7 @@ public class OrderEvent {
     public Type          getType()           { return type; }
     public OrderRequest  getRequest()        { return request; }
     public OrderResponse getResponse()       { return response; }
+    public String        getBrokerType()     { return brokerType; }
     public int           getBrokerConfigId() { return brokerConfigId; }
     public Instant       getEventTime()      { return eventTime; }
 }
