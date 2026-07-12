@@ -324,7 +324,9 @@ public class MStockBrokerClient implements BrokerClient {
     public boolean testConnection() {
         try {
             if (!config.isConfigured()) return false;
-            executeGet(getBaseUrl() + "/user/profile");
+            // The mStock API does not have a generic /user/profile, 
+            // so we test connectivity against /user/fundsummary
+            executeGet(getBaseUrl() + "/user/fundsummary");
             return true;
         } catch (BrokerException e) {
             log.warn("mStock testConnection failed: {}", e.getMessage());
