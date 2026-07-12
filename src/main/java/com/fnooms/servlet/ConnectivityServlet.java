@@ -97,22 +97,22 @@ public class ConnectivityServlet extends HttpServlet {
             long start = System.currentTimeMillis();
             try {
                 BrokerClient client = BrokerClientFactory.getClientFor(cfg);
-                boolean ok = client.testConnection();
+                client.testConnection(); // throws on failure
                 long latency = System.currentTimeMillis() - start;
 
-                result.addProperty("connected",  ok);
+                result.addProperty("connected",  true);
                 result.addProperty("latencyMs",  latency);
-                result.addProperty("status",     ok ? "CONNECTED" : "FAILED");
-                result.addProperty("error",      ok ? null : "testConnection returned false");
+                result.addProperty("status",     "CONNECTED");
+                result.addProperty("error",      (String) null);
 
-                log.info("Connectivity check: broker={} status={} latency={}ms",
-                        cfg.getBrokerType(), ok ? "OK" : "FAIL", latency);
+                log.info("Connectivity check: broker={} status=OK latency={}ms",
+                        cfg.getBrokerType(), latency);
 
             } catch (Exception e) {
                 long latency = System.currentTimeMillis() - start;
                 result.addProperty("connected", false);
                 result.addProperty("latencyMs", latency);
-                result.addProperty("status",    "ERROR");
+                result.addProperty("status",    "FAILED");
                 result.addProperty("error",     e.getMessage());
                 log.warn("Connectivity check failed for broker={}: {}", cfg.getBrokerType(), e.getMessage());
             }

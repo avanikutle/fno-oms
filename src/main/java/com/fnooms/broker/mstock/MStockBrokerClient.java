@@ -321,17 +321,13 @@ public class MStockBrokerClient implements BrokerClient {
     // =========================================================
 
     @Override
-    public boolean testConnection() {
-        try {
-            if (!config.isConfigured()) return false;
-            // The mStock API does not have a generic /user/profile, 
-            // so we test connectivity against /user/fundsummary
-            executeGet(getBaseUrl() + "/user/fundsummary");
-            return true;
-        } catch (BrokerException e) {
-            log.warn("mStock testConnection failed: {}", e.getMessage());
-            return false;
+    public void testConnection() throws BrokerException {
+        if (!config.isConfigured()) {
+            throw new BrokerException("Broker is not fully configured (missing API key or tokens)");
         }
+        // The mStock API does not have a generic /user/profile, 
+        // so we test connectivity against /portfolio/holdings since it is known to work
+        executeGet(getBaseUrl() + "/portfolio/holdings");
     }
 
     // =========================================================
@@ -361,13 +357,20 @@ public class MStockBrokerClient implements BrokerClient {
 
             JsonObject json = JsonParser.parseString(bodyStr).getAsJsonObject();
 
-            // mStock wraps responses with status:true/false
+            // mStock wraps responses with status:true/false or status:"success"
             if (json.has("status") && !json.get("status").isJsonNull()) {
                 JsonElement statusEl = json.get("status");
-                boolean ok = statusEl.isJsonPrimitive() && statusEl.getAsBoolean();
+                boolean ok = false;
+                if (statusEl.isJsonPrimitive()) {
+                    if (statusEl.getAsJsonPrimitive().isBoolean()) {
+                        ok = statusEl.getAsBoolean();
+                    } else if (statusEl.getAsJsonPrimitive().isString()) {
+                        ok = "success".equalsIgnoreCase(statusEl.getAsString());
+                    }
+                }
                 if (!ok) {
                     String msg = safeString(json, "message");
-                    throw new BrokerException("mStock returned status=false: " + msg, resp.code(), null);
+                    throw new BrokerException("mStock returned status=" + statusEl.getAsString() + ": " + msg, resp.code(), null);
                 }
             }
             return json;
@@ -377,13 +380,25 @@ public class MStockBrokerClient implements BrokerClient {
     }
 
     private Request buildRequest(String url, String jsonBody, String method) {
+        String authHeader = config.getAuthorizationHeader();
+        String apiVersion = config.getApiVersion();
+        String privateKey = config.getPrivateKey() != null ? config.getPrivateKey() : "";
+        
+        log.info("MSTOCK DEBUG - URL: {}", url);
+        log.info("MSTOCK DEBUG - Auth Header: {}", authHeader);
+        log.info("MSTOCK DEBUG - X-Mirae-Version: {}", apiVersion);
+        log.info("MSTOCK DEBUG - X-PrivateKey: {}", privateKey);
+
         Request.Builder builder = new Request.Builder()
                 .url(url)
-                .header("Authorization",  config.getAuthorizationHeader())
-                .header("X-Mirae-Version", config.getApiVersion())
-                .header("X-PrivateKey",   config.getPrivateKey() != null ? config.getPrivateKey() : "")
+                .header("Authorization",  authHeader)
+                .header("X-Mirae-Version", apiVersion)
                 .header("Content-Type",   "application/json")
                 .header("Accept",         "application/json");
+
+        if (privateKey != null && !privateKey.isBlank()) {
+            builder.header("X-PrivateKey", privateKey);
+        }
 
         switch (method) {
             case "GET"    -> builder.get();

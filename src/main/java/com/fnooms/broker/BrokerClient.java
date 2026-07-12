@@ -76,7 +76,7 @@ public interface BrokerClient {
     /**
      * Validate that the stored credentials are working.
      *
-     * @return true if a test API call succeeds
+     * @throws BrokerException if connection fails or API returns error
      */
-    boolean testConnection();
+    void testConnection() throws BrokerException;
 }
