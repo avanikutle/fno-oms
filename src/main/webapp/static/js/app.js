@@ -42,20 +42,23 @@ const Toast = {
 
   show(type, title, message, durationMs = null) {
     if (durationMs === null) {
-      durationMs = type === 'error' ? 8000 : 4000;
+      durationMs = type === 'error' ? 12000 : 4000;
     }
     const toast = document.createElement('div');
     toast.className = `toast ${type}`;
     toast.innerHTML = `
-      <div>
+      <div style="flex-grow: 1;">
         <div class="toast-title">${escHtml(title)}</div>
         ${message ? `<div class="toast-message">${escHtml(message)}</div>` : ''}
       </div>
+      <button style="background:none;border:none;color:inherit;cursor:pointer;opacity:0.7;font-size:16px;" onclick="this.parentElement.remove()">×</button>
     `;
     this.container.appendChild(toast);
     setTimeout(() => {
-      toast.style.animation = 'toast-in 0.3s ease reverse';
-      setTimeout(() => toast.remove(), 280);
+      if(toast.parentElement) {
+        toast.style.animation = 'toast-in 0.3s ease reverse';
+        setTimeout(() => toast.remove(), 280);
+      }
     }, durationMs);
   },
 

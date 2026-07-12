@@ -371,7 +371,7 @@ select.form-control option { background: var(--bg-card); }
    ============================================================ */
 .order-panel {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr;
   gap: 24px;
 }
 
@@ -506,7 +506,7 @@ select.form-control option { background: var(--bg-card); }
   animation: toast-in 0.3s ease;
 }
 .toast.success { border-left: 3px solid var(--green); }
-.toast.error   { border-left: 3px solid var(--red); }
+.toast.error   { border-left: 3px solid var(--red); background: rgba(239, 68, 68, 0.15); border: 1px solid var(--red); }
 .toast.info    { border-left: 3px solid var(--amber); }
 @keyframes toast-in {
   from { transform: translateX(110%); opacity: 0; }

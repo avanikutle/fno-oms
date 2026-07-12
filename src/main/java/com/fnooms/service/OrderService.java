@@ -42,6 +42,10 @@ public class OrderService {
         if (activeCfg == null) {
             throw new BrokerException("No active broker configured. Please go to Settings.");
         }
+        
+        if (orderDAO.hasOpenOrderForSymbol(request.getSymbol())) {
+            throw new BrokerException("An open order already exists for symbol: " + request.getSymbol());
+        }
 
         BrokerClient client = BrokerClientFactory.getClientFor(activeCfg);
         long start = System.currentTimeMillis();

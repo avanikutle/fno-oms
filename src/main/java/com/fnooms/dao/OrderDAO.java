@@ -99,6 +99,22 @@ public class OrderDAO {
         return list;
     }
 
+    public boolean hasOpenOrderForSymbol(String symbol) {
+        String sql = "SELECT COUNT(*) FROM orders WHERE symbol = ? AND status IN ('OPEN', 'PENDING', 'O-Pending', 'TRIGGER_PENDING')";
+        try (Connection c = DatabaseManager.getInstance().getConnection();
+             PreparedStatement ps = c.prepareStatement(sql)) {
+            ps.setString(1, symbol);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getInt(1) > 0;
+                }
+            }
+        } catch (SQLException e) {
+            log.error("hasOpenOrderForSymbol failed for symbol={}", symbol, e);
+        }
+        return false;
+    }
+
     private List<Order> queryList(String sql) {
         List<Order> list = new ArrayList<>();
         try (Connection c = DatabaseManager.getInstance().getConnection();
