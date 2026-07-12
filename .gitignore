@@ -50,3 +50,4 @@ buildNumber.properties
 
 # TimescaleDB data
 pgdata/
+data/
