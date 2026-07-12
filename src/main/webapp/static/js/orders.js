@@ -267,7 +267,25 @@ const Orders = {
 
       el.innerHTML = orders.map(o => {
         const side  = (o.transactionType || '').toUpperCase();
-        const stCls = ({'COMPLETE':'complete','OPEN':'open','REJECTED':'rejected','CANCELLED':'cancelled'}[o.status] || '');
+        const stCls = ({'COMPLETE':'complete','O-Completed':'complete','OPEN':'open','O-Pending':'open','REJECTED':'rejected','CANCELLED':'cancelled','O-Cancelled':'cancelled'}[o.status] || '');
+        const isCancellable = (o.status && (o.status.toUpperCase().includes('OPEN') || o.status.toUpperCase().includes('PENDING')));
+        const isCloseable   = (o.status && (o.status.toUpperCase().includes('COMPLETE') || o.status.toUpperCase().includes('EXECUTED')));
+
+        let actions = '—';
+        if (isCancellable) {
+          actions = `<button class="btn btn-danger btn-sm" onclick="Orders.cancel('${escHtml(o.brokerOrderId)}')">Cancel</button>`;
+        } else if (isCloseable) {
+          // Pass necessary data to close the position
+          const closeData = {
+            exchange: o.exchange,
+            symbol: o.symbol,
+            side: side === 'BUY' ? 'SELL' : 'BUY',
+            quantity: o.quantity,
+            product: o.product
+          };
+          actions = `<button class="btn btn-warning btn-sm" onclick="Orders.close('${encodeURIComponent(JSON.stringify(closeData))}')">Close</button>`;
+        }
+
         return `<tr>
           <td class="symbol">${escHtml(o.symbol)}</td>
           <td class="${side === 'BUY' ? 'buy' : 'sell'}">${side}</td>
@@ -277,11 +295,7 @@ const Orders = {
           <td class="text-mono">${o.averagePrice ? fmt(o.averagePrice) : '—'}</td>
           <td><span class="badge ${stCls === 'complete' ? 'badge-green' : stCls === 'open' ? 'badge-amber' : 'badge-muted'}">${escHtml(o.status)}</span></td>
           <td class="text-mono" style="font-size:11px">${escHtml(o.brokerOrderId || '—')}</td>
-          <td>
-            ${o.status === 'OPEN' || o.status === 'TRIGGER PENDING'
-              ? `<button class="btn btn-danger btn-sm" onclick="Orders.cancel('${escHtml(o.brokerOrderId)}')">Cancel</button>`
-              : '—'}
-          </td>
+          <td>${actions}</td>
         </tr>`;
       }).join('');
     } catch(e) {
@@ -297,6 +311,55 @@ const Orders = {
       this.loadOrderBook();
     } else {
       Toast.error('Cancel Failed', res.message);
+    }
+  },
+
+  async close(dataStr) {
+    let data;
+    try {
+      data = JSON.parse(decodeURIComponent(dataStr));
+    } catch(e) {
+      Toast.error('Error', 'Invalid order data for closing');
+      return;
+    }
+    
+    const priceStr = prompt(`Close position: ${data.side} ${data.quantity} ${data.symbol}\n\nEnter Limit Price to place a LIMIT order.\nLeave blank for MARKET order:`, "");
+    if (priceStr === null) return; // User cancelled the prompt
+
+    const isLimit = priceStr.trim() !== "";
+    const price = isLimit ? parseFloat(priceStr) : null;
+    
+    if (isLimit && isNaN(price)) {
+      Toast.error('Invalid Price', 'Please enter a valid numeric price');
+      return;
+    }
+    
+    const body = {
+      exchange: data.exchange,
+      symbol: data.symbol,
+      transactionType: data.side,
+      orderType: isLimit ? 'LIMIT' : 'MARKET',
+      product: data.product,
+      validity: 'DAY',
+      quantity: data.quantity,
+      tag: 'close_position'
+    };
+    
+    if (isLimit) {
+      body.price = price;
+    }
+
+    try {
+      const res = await API.post('/api/orders', body);
+      if (res.success) {
+        const orderTypeStr = isLimit ? `LIMIT @ ₹${price}` : 'MARKET';
+        Toast.success('Position Closed ✓', `${data.side} ${body.quantity} ${body.symbol} ${orderTypeStr}`);
+        this.loadOrderBook();
+      } else {
+        Toast.error('Close Failed', res.message);
+      }
+    } catch(e) {
+      Toast.error('Network Error', e.message);
     }
   },
 };
