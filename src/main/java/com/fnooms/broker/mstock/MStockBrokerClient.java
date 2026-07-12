@@ -129,23 +129,23 @@ public class MStockBrokerClient implements BrokerClient {
 
     @Override
     public OrderResponse placeOrder(OrderRequest req) throws BrokerException {
-        JsonObject payload = new JsonObject();
-        payload.addProperty("tradingsymbol",    req.getSymbol());
-        payload.addProperty("exchange",         req.getExchange());
-        payload.addProperty("transaction_type", req.getTransactionType());
-        payload.addProperty("order_type",       req.getOrderType());
-        payload.addProperty("product",          req.getProduct());
-        payload.addProperty("quantity",         req.getQuantity());
-        payload.addProperty("validity",         req.getValidity() != null ? req.getValidity() : "DAY");
+        Map<String, String> formParams = new LinkedHashMap<>();
+        formParams.put("tradingsymbol",    req.getSymbol());
+        formParams.put("exchange",         req.getExchange());
+        formParams.put("transaction_type", req.getTransactionType());
+        formParams.put("order_type",       req.getOrderType());
+        formParams.put("product",          req.getProduct());
+        formParams.put("quantity",         String.valueOf(req.getQuantity()));
+        formParams.put("validity",         req.getValidity() != null ? req.getValidity() : "DAY");
 
         if (req.getPrice() != null)
-            payload.addProperty("price", req.getPrice());
+            formParams.put("price", String.valueOf(req.getPrice()));
         if (req.getTriggerPrice() != null)
-            payload.addProperty("trigger_price", req.getTriggerPrice());
+            formParams.put("trigger_price", String.valueOf(req.getTriggerPrice()));
         if (req.getTag() != null)
-            payload.addProperty("tag", req.getTag());
+            formParams.put("tag", req.getTag());
 
-        JsonObject resp = executePost(getBaseUrl() + "/orders/regular", payload.toString());
+        JsonObject resp = executePostForm(getBaseUrl() + "/orders/regular", formParams);
 
         OrderResponse order = new OrderResponse();
         JsonObject data = safeGetObject(resp, "data");
@@ -340,6 +340,38 @@ public class MStockBrokerClient implements BrokerClient {
 
     private JsonObject executePost(String url, String jsonBody) throws BrokerException {
         return execute(buildRequest(url, jsonBody, "POST"));
+    }
+
+    private JsonObject executePostForm(String url, Map<String, String> formParams) throws BrokerException {
+        String authHeader = config.getAuthorizationHeader();
+        String apiVersion = config.getApiVersion();
+        String privateKey = config.getPrivateKey() != null ? config.getPrivateKey() : "";
+
+        log.info("MSTOCK DEBUG - Request POST URL: {}", url);
+        log.info("MSTOCK DEBUG - Request Headers: Authorization={}, X-Mirae-Version={}, X-PrivateKey={}", 
+                 authHeader, apiVersion, privateKey);
+
+        FormBody.Builder formBuilder = new FormBody.Builder();
+        StringBuilder formLog = new StringBuilder("MSTOCK DEBUG - Form Params: ");
+        for (Map.Entry<String, String> entry : formParams.entrySet()) {
+            formBuilder.add(entry.getKey(), entry.getValue());
+            formLog.append(entry.getKey()).append("=").append(entry.getValue()).append(", ");
+        }
+        log.info(formLog.toString());
+
+        Request.Builder builder = new Request.Builder()
+                .url(url)
+                .header("Authorization",  authHeader)
+                .header("X-Mirae-Version", apiVersion)
+                .header("Content-Type", "application/x-www-form-urlencoded")
+                .header("Accept", "application/json")
+                .post(formBuilder.build());
+
+        if (privateKey != null && !privateKey.isBlank()) {
+            builder.header("X-PrivateKey", privateKey);
+        }
+
+        return execute(builder.build());
     }
 
     private JsonObject execute(Request request) throws BrokerException {
