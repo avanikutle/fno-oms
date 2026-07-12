@@ -40,7 +40,10 @@ const Toast = {
     this.container = document.getElementById('toast-container');
   },
 
-  show(type, title, message, durationMs = 4000) {
+  show(type, title, message, durationMs = null) {
+    if (durationMs === null) {
+      durationMs = type === 'error' ? 8000 : 4000;
+    }
     const toast = document.createElement('div');
     toast.className = `toast ${type}`;
     toast.innerHTML = `

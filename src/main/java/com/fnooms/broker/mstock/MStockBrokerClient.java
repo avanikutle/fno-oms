@@ -349,19 +349,25 @@ public class MStockBrokerClient implements BrokerClient {
             long elapsed = System.currentTimeMillis() - start;
             log.debug("{} {} → {} ({}ms)", request.method(), request.url(), resp.code(), elapsed);
 
-            if (!resp.isSuccessful()) {
-                throw new BrokerException(
-                        "mStock API error " + resp.code() + ": " + bodyStr,
-                        resp.code(), null);
+            JsonObject json = new JsonObject();
+            try {
+                JsonElement root = JsonParser.parseString(bodyStr);
+                if (root.isJsonArray()) {
+                    JsonArray arr = root.getAsJsonArray();
+                    if (arr.size() > 0) json = arr.get(0).getAsJsonObject();
+                } else if (root.isJsonObject()) {
+                    json = root.getAsJsonObject();
+                }
+            } catch (Exception e) {
+                // Ignore parse errors, fallback to raw body string for error reporting
             }
 
-            JsonElement root = JsonParser.parseString(bodyStr);
-            JsonObject json;
-            if (root.isJsonArray()) {
-                JsonArray arr = root.getAsJsonArray();
-                json = arr.size() > 0 ? arr.get(0).getAsJsonObject() : new JsonObject();
-            } else {
-                json = root.getAsJsonObject();
+            if (!resp.isSuccessful()) {
+                String errorMsg = safeString(json, "message");
+                if (errorMsg == null) errorMsg = bodyStr;
+                throw new BrokerException(
+                        "mStock API error " + resp.code() + ": " + errorMsg,
+                        resp.code(), null);
             }
 
             // mStock wraps responses with status:true/false or status:"success"
