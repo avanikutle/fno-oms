@@ -19,7 +19,7 @@
 
 ---
 
-## Architecture
+## Architecture of App
 
 ```
 Browser (SPA)
