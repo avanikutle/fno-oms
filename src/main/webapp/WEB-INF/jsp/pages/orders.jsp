@@ -74,8 +74,14 @@
     <%-- ── Order Book ────────────────────────────────── --%>
     <div class="card">
       <div class="card-header">
-        <div class="card-title">Today's Order Book</div>
-        <span class="badge badge-amber" style="font-size:10px">Auto-refresh 5s</span>
+        <div class="card-title">Order Book</div>
+        <div style="display:flex;gap:12px;align-items:center">
+          <div class="tabs" style="display:flex;gap:4px;background:var(--bg-hover);padding:4px;border-radius:4px">
+            <button id="tab-open" class="btn btn-sm" style="background:var(--bg-card)" onclick="Orders.setTab('open')">Open Orders</button>
+            <button id="tab-history" class="btn btn-sm btn-ghost" onclick="Orders.setTab('history')">History</button>
+          </div>
+          <span class="badge badge-amber" style="font-size:10px">Auto-refresh 5s</span>
+        </div>
       </div>
       <div class="table-wrap">
         <table>

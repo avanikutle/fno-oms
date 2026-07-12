@@ -87,9 +87,9 @@
 <div class="toast-container" id="toast-container"></div>
 
 <!-- Scripts -->
-<script src="<%= ctx %>/static/js/app.js"></script>
+<script src="<%= ctx %>/static/js/app.js?v=2.2"></script>
 <script src="<%= ctx %>/static/js/quotes.js"></script>
-<script src="<%= ctx %>/static/js/orders.js?v=2.1"></script>
+<script src="<%= ctx %>/static/js/orders.js?v=2.2"></script>
 <script src="<%= ctx %>/static/js/portfolio.js"></script>
 <script src="<%= ctx %>/static/js/connectivity.js"></script>
 

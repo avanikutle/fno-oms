@@ -346,6 +346,9 @@ select.form-control option { background: var(--bg-card); }
 .btn-danger { background: transparent; color: var(--red); border: 1px solid rgba(239,68,68,0.3); }
 .btn-danger:hover:not(:disabled) { background: var(--red-dim); }
 
+.btn-warning { background: transparent; color: var(--amber); border: 1px solid rgba(251,191,36,0.3); }
+.btn-warning:hover:not(:disabled) { background: var(--amber-glow); }
+
 .btn-sm { padding: 5px 10px; font-size: 11px; }
 .btn-icon { padding: 6px; width: 30px; height: 30px; justify-content: center; }
 

@@ -101,7 +101,7 @@ public class MStockOrdersApi {
     }
 
     public boolean cancelOrder(String brokerOrderId) throws BrokerException {
-        JsonObject json = core.executeDelete(core.getBaseUrl() + "/orders/" + brokerOrderId, null);
+        JsonObject json = core.executeDelete(core.getBaseUrl() + "/orders/regular/" + brokerOrderId, null);
         return core.safeBoolean(json, "status");
     }
 
@@ -112,7 +112,7 @@ public class MStockOrdersApi {
         if (updated.getTriggerPrice() != null) payload.addProperty("trigger_price", updated.getTriggerPrice());
         if (updated.getOrderType() != null)  payload.addProperty("order_type",    updated.getOrderType());
 
-        core.executePut(core.getBaseUrl() + "/orders/" + brokerOrderId, payload.toString());
+        core.executePut(core.getBaseUrl() + "/orders/regular/" + brokerOrderId, payload.toString());
 
         OrderResponse order = new OrderResponse();
         order.setBrokerOrderId(brokerOrderId);

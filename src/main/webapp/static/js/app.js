@@ -67,6 +67,80 @@ const Toast = {
   info(title, msg)    { this.show('info',     title, msg); },
 };
 
+// ── Custom Modal ──────────────────────────────────────────────────
+const Modal = {
+  createOverlay() {
+    const overlay = document.createElement('div');
+    overlay.style.position = 'fixed';
+    overlay.style.top = '0'; overlay.style.left = '0';
+    overlay.style.width = '100vw'; overlay.style.height = '100vh';
+    overlay.style.backgroundColor = 'rgba(0,0,0,0.5)';
+    overlay.style.zIndex = '9999';
+    overlay.style.display = 'flex';
+    overlay.style.alignItems = 'center';
+    overlay.style.justifyContent = 'center';
+    return overlay;
+  },
+  createBox(contentHtml) {
+    const box = document.createElement('div');
+    box.style.background = 'var(--bg-card)';
+    box.style.border = '1px solid var(--border)';
+    box.style.borderRadius = 'var(--radius-md)';
+    box.style.padding = '20px';
+    box.style.minWidth = '300px';
+    box.style.boxShadow = '0 10px 40px rgba(0,0,0,0.5)';
+    box.innerHTML = contentHtml;
+    return box;
+  },
+  confirm(title, message) {
+    return new Promise(resolve => {
+      const overlay = this.createOverlay();
+      const box = this.createBox(`
+        <h3 style="margin-top:0;margin-bottom:12px;font-size:16px">${escHtml(title)}</h3>
+        <p style="margin-bottom:20px;font-size:14px;color:var(--text-secondary)">${escHtml(message)}</p>
+        <div style="display:flex;justify-content:flex-end;gap:10px">
+          <button id="modal-cancel" class="btn btn-ghost">Cancel</button>
+          <button id="modal-ok" class="btn btn-danger">OK</button>
+        </div>
+      `);
+      overlay.appendChild(box);
+      document.body.appendChild(overlay);
+
+      const close = (val) => { overlay.remove(); resolve(val); };
+      box.querySelector('#modal-cancel').onclick = () => close(false);
+      box.querySelector('#modal-ok').onclick = () => close(true);
+      
+      // Auto focus OK button so spacebar triggers it
+      setTimeout(() => box.querySelector('#modal-ok').focus(), 50);
+    });
+  },
+  prompt(title, message) {
+    return new Promise(resolve => {
+      const overlay = this.createOverlay();
+      const box = this.createBox(`
+        <h3 style="margin-top:0;margin-bottom:12px;font-size:16px">${escHtml(title)}</h3>
+        <p style="margin-bottom:12px;font-size:14px;color:var(--text-secondary)">${escHtml(message)}</p>
+        <input type="number" id="modal-input" class="form-input" style="width:100%;margin-bottom:20px" placeholder="Leave blank for MARKET">
+        <div style="display:flex;justify-content:flex-end;gap:10px">
+          <button id="modal-cancel" class="btn btn-ghost">Cancel</button>
+          <button id="modal-ok" class="btn btn-primary">OK</button>
+        </div>
+      `);
+      overlay.appendChild(box);
+      document.body.appendChild(overlay);
+
+      const input = box.querySelector('#modal-input');
+      const close = (val) => { overlay.remove(); resolve(val); };
+      
+      box.querySelector('#modal-cancel').onclick = () => close(null);
+      box.querySelector('#modal-ok').onclick = () => close(input.value);
+      input.onkeydown = (e) => { if (e.key === 'Enter') close(input.value); };
+      
+      setTimeout(() => input.focus(), 50);
+    });
+  }
+};
+
 // ── API Helpers ───────────────────────────────────────────────────
 const API = {
   base: document.querySelector('meta[name="ctx-path"]')?.content || '',

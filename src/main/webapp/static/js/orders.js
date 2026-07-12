@@ -5,7 +5,9 @@
 
 const Orders = {
   currentSide: 'BUY',
-  orderBookTimer: null,
+  refreshTimer: null,
+  allOrders: [],
+  currentTab: 'open',
 
   load() {
     // Only render dynamic form if JSP static form is not present
@@ -258,14 +260,43 @@ const Orders = {
 
     try {
       const res = await API.get('/api/orders');
-      const orders = res.data || [];
+      this.allOrders = res.data || [];
+      this.renderOrders();
+    } catch(e) {
+      const el = document.getElementById('orderbook-tbody');
+      if (el) el.innerHTML = `<tr><td colspan="9" style="color:var(--red);padding:16px">${escHtml(e.message)}</td></tr>`;
+    }
+  },
 
-      if (!orders.length) {
-        el.innerHTML = `<tr><td colspan="9">${emptyState('📋', 'No orders today', 'Place an order using the form')}</td></tr>`;
-        return;
-      }
+  setTab(tab) {
+    this.currentTab = tab;
+    document.getElementById('tab-open').className = 'btn btn-sm ' + (tab === 'open' ? '' : 'btn-ghost');
+    document.getElementById('tab-open').style.background = tab === 'open' ? 'var(--bg-card)' : 'transparent';
+    document.getElementById('tab-history').className = 'btn btn-sm ' + (tab === 'history' ? '' : 'btn-ghost');
+    document.getElementById('tab-history').style.background = tab === 'history' ? 'var(--bg-card)' : 'transparent';
+    this.renderOrders();
+  },
 
-      el.innerHTML = orders.map(o => {
+  renderOrders() {
+    const el = document.getElementById('orderbook-tbody');
+    if (!el) return;
+
+    if (!this.allOrders.length) {
+      el.innerHTML = `<tr><td colspan="9">${emptyState('📋', 'No orders today', 'Place an order using the form')}</td></tr>`;
+      return;
+    }
+
+    const filtered = this.allOrders.filter(o => {
+      const isPending = o.status && (o.status.toUpperCase().includes('OPEN') || o.status.toUpperCase().includes('PENDING'));
+      return this.currentTab === 'open' ? isPending : !isPending;
+    });
+
+    if (!filtered.length) {
+      el.innerHTML = `<tr><td colspan="9">${emptyState('📋', 'No orders found', 'Try checking the other tab')}</td></tr>`;
+      return;
+    }
+
+    el.innerHTML = filtered.map(o => {
         const side  = (o.transactionType || '').toUpperCase();
         const stCls = ({'COMPLETE':'complete','O-Completed':'complete','OPEN':'open','O-Pending':'open','REJECTED':'rejected','CANCELLED':'cancelled','O-Cancelled':'cancelled'}[o.status] || '');
         const isCancellable = (o.status && (o.status.toUpperCase().includes('OPEN') || o.status.toUpperCase().includes('PENDING')));
@@ -298,13 +329,11 @@ const Orders = {
           <td>${actions}</td>
         </tr>`;
       }).join('');
-    } catch(e) {
-      el.innerHTML = `<tr><td colspan="9" style="color:var(--red);padding:16px">${escHtml(e.message)}</td></tr>`;
-    }
   },
 
   async cancel(orderId) {
-    if (!confirm('Cancel order ' + orderId + '?')) return;
+    const confirmed = await Modal.confirm('Cancel Order', 'Cancel order ' + orderId + '?');
+    if (!confirmed) return;
     const res = await API.delete('/api/orders/' + orderId);
     if (res.success) {
       Toast.info('Order Cancelled', orderId);
@@ -323,7 +352,10 @@ const Orders = {
       return;
     }
     
-    const priceStr = prompt(`Close position: ${data.side} ${data.quantity} ${data.symbol}\n\nEnter Limit Price to place a LIMIT order.\nLeave blank for MARKET order:`, "");
+    const priceStr = await Modal.prompt(
+      'Close Position', 
+      `Close position: ${data.side} ${data.quantity} ${data.symbol}\n\nEnter Limit Price (Leave blank for MARKET order):`
+    );
     if (priceStr === null) return; // User cancelled the prompt
 
     const isLimit = priceStr.trim() !== "";
