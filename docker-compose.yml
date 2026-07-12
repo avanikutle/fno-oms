@@ -1,0 +1,37 @@
+version: '3.8'
+
+services:
+  timescaledb:
+    image: timescale/timescaledb:latest-pg16
+    container_name: fno-oms-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: fno_oms
+      POSTGRES_USER: fnooms
+      POSTGRES_PASSWORD: fnooms123
+    ports:
+      - "5432:5432"
+    volumes:
+      # Bind mount → data lives on your Mac at ./data/postgres
+      # Safe from 'docker-compose down -v', easy to backup
+      - ./data/postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U fnooms -d fno_oms"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: fno-oms-pgadmin
+    restart: unless-stopped
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@fnooms.local
+      PGADMIN_DEFAULT_PASSWORD: admin123
+    ports:
+      - "5050:80"
+    volumes:
+      # pgAdmin config also persisted locally
+      - ./data/pgadmin:/var/lib/pgadmin
+    depends_on:
+      - timescaledb
