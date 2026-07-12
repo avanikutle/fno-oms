@@ -75,6 +75,19 @@ public class OrderDAO {
         }
     }
 
+    public void updateOrderStatus(String brokerOrderId, String status, String message) {
+        String sql = "UPDATE orders SET status = ?, status_message = ?, updated_at = NOW() WHERE broker_order_id = ?";
+        try (Connection c = DatabaseManager.getInstance().getConnection();
+             PreparedStatement ps = c.prepareStatement(sql)) {
+            ps.setString(1, status);
+            ps.setString(2, message);
+            ps.setString(3, brokerOrderId);
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            log.error("Update order status failed for id={}", brokerOrderId, e);
+        }
+    }
+
     public List<Order> findTodaysOrders() {
         String sql = """
                 SELECT * FROM orders

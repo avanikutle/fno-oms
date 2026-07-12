@@ -101,8 +101,8 @@ public class MStockOrdersApi {
     }
 
     public boolean cancelOrder(String brokerOrderId) throws BrokerException {
-        JsonObject json = core.executeDelete(core.getBaseUrl() + "/orders/regular/" + brokerOrderId, null);
-        return core.safeBoolean(json, "status");
+        core.executeDelete(core.getBaseUrl() + "/orders/regular/" + brokerOrderId, null);
+        return true;
     }
 
     public OrderResponse modifyOrder(String brokerOrderId, OrderRequest updated) throws BrokerException {

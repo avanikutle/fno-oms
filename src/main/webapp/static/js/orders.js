@@ -335,11 +335,11 @@ const Orders = {
     const confirmed = await Modal.confirm('Cancel Order', 'Cancel order ' + orderId + '?');
     if (!confirmed) return;
     const res = await API.delete('/api/orders/' + orderId);
-    if (res.success) {
+    if (res.status === 'success') {
       Toast.info('Order Cancelled', orderId);
       this.loadOrderBook();
     } else {
-      Toast.error('Cancel Failed', res.message);
+      Toast.error('Cancel Failed', res.message || 'Unknown error');
     }
   },
 

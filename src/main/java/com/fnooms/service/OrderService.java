@@ -80,6 +80,14 @@ public class OrderService {
                 new AuditEvent("GET_ORDER_BOOK", client.getBrokerType().name(),
                         "/orders", null, "count=" + orders.size(), 200, 0, null));
 
+        if (orders != null) {
+            for (OrderResponse o : orders) {
+                if (o.getBrokerOrderId() != null && o.getStatus() != null) {
+                    orderDAO.updateOrderStatus(o.getBrokerOrderId(), o.getStatus(), o.getStatusMessage());
+                }
+            }
+        }
+
         return orders;
     }
 
@@ -87,6 +95,10 @@ public class OrderService {
         BrokerConfig activeCfg = configDAO.getActive();
         BrokerClient client = BrokerClientFactory.getClientFor(activeCfg);
         boolean result = client.cancelOrder(brokerOrderId);
+
+        if (result) {
+            orderDAO.updateOrderStatus(brokerOrderId, "CANCELLED", "User cancelled");
+        }
 
         AuditEventBus.getInstance().publish(
                 new AuditEvent("CANCEL_ORDER", activeCfg.getBrokerType(),
