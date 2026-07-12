@@ -145,7 +145,7 @@ public class MStockBrokerClient implements BrokerClient {
         if (req.getTag() != null)
             payload.addProperty("tag", req.getTag());
 
-        JsonObject resp = executePost(getBaseUrl() + "/orders", payload.toString());
+        JsonObject resp = executePost(getBaseUrl() + "/orders/regular", payload.toString());
 
         OrderResponse order = new OrderResponse();
         JsonObject data = safeGetObject(resp, "data");
@@ -355,7 +355,14 @@ public class MStockBrokerClient implements BrokerClient {
                         resp.code(), null);
             }
 
-            JsonObject json = JsonParser.parseString(bodyStr).getAsJsonObject();
+            JsonElement root = JsonParser.parseString(bodyStr);
+            JsonObject json;
+            if (root.isJsonArray()) {
+                JsonArray arr = root.getAsJsonArray();
+                json = arr.size() > 0 ? arr.get(0).getAsJsonObject() : new JsonObject();
+            } else {
+                json = root.getAsJsonObject();
+            }
 
             // mStock wraps responses with status:true/false or status:"success"
             if (json.has("status") && !json.get("status").isJsonNull()) {
