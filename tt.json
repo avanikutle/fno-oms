@@ -1,43 +1,38 @@
+From our code  spec
 {
-    "status": "success",
-    "data": {
-        "user_type": "individual",
-        "email": "",
-        "user_name": "SUDHEER REDDY LENKALA",
-        "user_shortname": "CDSL",
-        "broker": "MIRAE",
-        "exchanges": [
-            "BEQ",
-            "BFO",
-            "NEQ",
-            "NFO",
-            "NCR",
-            "BSEMF",
-            "NSEIPO",
-            "BSEIPO"
-        ],
-        "products": [
-            "CNC",
-            "NRML",
-            "MIS"
-        ],
-        "order_types": [
-            "MARKET",
-            "LIMIT",
-            "SL",
-            "SL-M"
-        ],
-        "avatar_url": "",
-        "user_id": "6544",
-        "api_key": "nRRoc4X2uClpzIqNHlUC5Q==",
-        "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJVU0VSTkFNRSI6Ik1BNjg3NiIsIkNMSUVOVE5BTUUiOiJTVURIRUVSIFJFRERZIExFTktBTEEiLCJVU0VSX0RFVEFJTFMiOiJwdzVDdS9xMnp0Y3JRcFdtRy9DcmVGc1dGSEt4Rmc4dVBrZlI4ampWUEliUWVscUhURFFwQjUrdUtnYnBEL3BzbFlMZTU5cDM0THI0Y3ZHTmdLKzFVcnN4V1ZodzJtT0dhZXRuVTRGelJBY2tkMDd5SWtEQnZaVkhQd2NJN045VmFTUm11bUpFMDFxL2F2eFFaR0Q0cU1YYVBQdHkyR0FrSFV6a2JRVnlDV0dteVhNeTA0ZmpmUXBlWC9hQ0lBRUJHMEIwSjI5ejI0V1I2QXVHdTFrdjV0UnBrT2VYcld3NzRiNUJqMmhJcVhrSG1LaXJ1bXZtSEU5ditaWDdlVTV2ZGIxdTI4dklvcEdZYTRHdHljNW1Eem5KeFRXUEU0dTZIclJVdGhiWHZiQmZVelNuTEZKeWVQY2FQZGxFZmxjRlducmhyT05VeVFVcC9wV01jUHFnV3c9PSIsIlVTRVJJRCI6Ik1BNjg3NiIsIkFDQ0VTU19UT0tFTiI6ImV5SmhiR2NpT2lKSVV6STFOaUlzSW5SNWNDSTZJa3BYVkNKOS5leUpoZFdRaU9pSnRhWEpoWlM1cGJpSXNJbVY0Y0NJNk1UYzROREV3TVRjNE1Td2lhV0YwSWpveE56ZzBNREUxTXpneExDSnBjM01pT2lKdGFYSmhaUzVwYmlJc0ltNWlaaUk2TVRRME5EUTNPRFF3TUN3aWNHWnRJam9pTVNJc0luUnBaQ0k2SWpVNUlpd2lkV2xrSWpvaU5EZzFOemt3SWl3aWRtbGtJam9pTWpFaWZRLk1KVUNCMV9qdjZaWVlWUXJrYUVUM3Q4VGxMRGlrak9PRGU5X19LUnZ4QWciLCJBUElUWVBFIjoiVFlQRUEiLCJVSUQiOiJjODk5OTc4Ni04YWRkLTQ4MzEtOGEwOC0wNWNmZDg3MDE5OTEiLCJuYmYiOjE3ODQwMTUzODEsImV4cCI6MTc4NDA1MzgwMCwiaWF0IjoxNzg0MDE1MzgxfQ.BTIrvjmbXHsgjSrp5q2r5e97J3Z4u9JKcRXQLW4sLIM",
-        "public_token": "c8999786-8add-4831-8a08-05cfd8701991",
-        "enctoken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJtaXJhZS5pbiIsImV4cCI6MTc4NDEwMTc4MSwiaWF0IjoxNzg0MDE1MzgxLCJpc3MiOiJtaXJhZS5pbiIsIm5iZiI6MTQ0NDQ3ODQwMCwicGZtIjoiMSIsInRpZCI6IjU5IiwidWlkIjoiNDg1NzkwIiwidmlkIjoiMjEifQ.MJUCB1_jv6ZYYVQrkaET3t8TlLDikjOODe9__KRvxAg",
-        "refresh_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJtaXJhZS5pbiIsImV4cCI6MTc4NjYwNzM4MSwiaWF0IjoxNzg0MDE1MzgxLCJpc3MiOiJtaXJhZS5pbiIsIm5iZiI6MTQ0NDQ3ODQwMCwicGZtIjoiMSIsInRpZCI6IjU5IiwidWlkIjoiNDg1NzkwIiwidmlkIjoiMjEifQ.zAxLHvsgJFOvglkdOpOsDtxDoP67Wrw6gQvonELE-2E",
-        "silo": "",
-        "login_time": "2026-07-14 01:19:41",
-        "meta": {
-            "demat_consent": "physical"
-        }
-    }
+    "variety": "NORMAL",
+    "tradingsymbol": "INFY-EQ",
+    "symboltoken": "1594",
+    "exchange": "NSE",
+    "transactiontype": "BUY",
+    "ordertype": "MARKET",
+    "producttype": "DELIVERY",
+    "quantity": "1",
+    "duration": "DAY",
+    "price": "0",
+    "triggerprice": "0",
+    "squareoff": "0",
+    "stoploss": "0",
+    "trailingStopLoss": "",
+    "disclosedquantity": "",
+    "ordertag": ""
+}
+From API spec 
+{
+    "variety": "NORMAL",
+    "tradingsymbol": "ACC-EQ",
+    "symboltoken": "22",
+    "exchange": "NSE",
+    "transactiontype": "BUY",
+    "ordertype": "MARKET",
+    "quantity": "20",
+    "producttype": "DELIVERY",
+    "price": "194.50",
+    "triggerprice": "0",
+    "squareoff": "0",
+    "stoploss": "0",
+    "trailingStopLoss": "",
+    "disclosedquantity": "",
+    "duration": "DAY",
+    "ordertag": ""
 }

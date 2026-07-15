@@ -42,7 +42,7 @@ public class AlgoOrchestrator {
         OrderService orderService = new OrderService();
 
         // 3. Initialize Strategy Engine with target order broker
-        StrategyEngine engine = new StrategyEngine(orderService);
+        StrategyEngine engine = new StrategyEngine(orderService, kvDao);
         for (StrategyConfig config : configs) {
             engine.addConfig(config);
         }

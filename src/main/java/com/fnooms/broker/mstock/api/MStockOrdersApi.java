@@ -27,17 +27,30 @@ public class MStockOrdersApi {
         this.core = core;
     }
 
+    private String mapProductType(String product, String exchange) {
+        if (product == null) return "CARRYFORWARD";
+        String p = product.toUpperCase();
+        if ("NRML".equals(p)) {
+            return ("NSE".equalsIgnoreCase(exchange) || "BSE".equalsIgnoreCase(exchange)) ? "DELIVERY" : "CARRYFORWARD";
+        } else if ("MIS".equals(p)) {
+            return "INTRADAY";
+        } else if ("CNC".equals(p)) {
+            return "DELIVERY";
+        }
+        return p;
+    }
+
     public OrderResponse placeOrder(OrderRequest req) throws BrokerException {
         JsonObject payload = new JsonObject();
         String token = com.fnooms.algo.ScripMasterService.getToken(req.getSymbol());
         
         payload.addProperty("variety", "NORMAL");
-        payload.addProperty("tradingsymbol", token != null ? token : req.getSymbol());
-        payload.addProperty("symboltoken", token != null ? token : req.getSymbol()); // Some Type B APIs require both
+        payload.addProperty("tradingsymbol", req.getSymbol());
+        payload.addProperty("symboltoken", token != null ? token : req.getSymbol());
         payload.addProperty("exchange", req.getExchange());
         payload.addProperty("transactiontype", req.getTransactionType());
         payload.addProperty("ordertype", req.getOrderType());
-        payload.addProperty("producttype", req.getProduct());
+        payload.addProperty("producttype", mapProductType(req.getProduct(), req.getExchange()));
         payload.addProperty("quantity", String.valueOf(req.getQuantity()));
         payload.addProperty("duration", req.getValidity() != null ? req.getValidity() : "DAY");
 
@@ -45,17 +58,33 @@ public class MStockOrdersApi {
         payload.addProperty("triggerprice", req.getTriggerPrice() != null ? String.valueOf(req.getTriggerPrice()) : "0");
         payload.addProperty("squareoff", "0");
         payload.addProperty("stoploss", "0");
-        payload.addProperty("trailingStopLoss", "");
-        payload.addProperty("disclosedquantity", "");
+        payload.addProperty("trailingStopLoss", "0");
+        payload.addProperty("disclosedquantity", "0");
         payload.addProperty("ordertag", req.getTag() != null ? req.getTag() : "");
 
+        log.info("MStock placeOrder payload: {}", payload.toString());
         JsonObject resp = core.executePost(core.getBaseUrl() + "/orders/regular", payload.toString());
+        log.info("MStock placeOrder response: {}", resp.toString());
 
         OrderResponse order = new OrderResponse();
-        JsonObject data = core.safeGetObject(resp, "data");
-        if (data != null && data.has("order_id")) {
-            order.setBrokerOrderId(data.get("order_id").getAsString());
+        if (resp.has("data")) {
+            if (resp.get("data").isJsonObject()) {
+                JsonObject data = resp.getAsJsonObject("data");
+                if (data.has("order_id")) {
+                    order.setBrokerOrderId(data.get("order_id").getAsString());
+                } else if (data.has("orderId")) {
+                    order.setBrokerOrderId(data.get("orderId").getAsString());
+                } else {
+                    order.setBrokerOrderId("UNKNOWN_" + System.currentTimeMillis());
+                }
+            } else if (resp.get("data").isJsonPrimitive()) {
+                order.setBrokerOrderId(resp.get("data").getAsString());
+            }
+        } else {
+            // If it succeeded but we can't find the ID, prevent retry loop by setting a dummy ID
+            order.setBrokerOrderId("UNKNOWN_" + System.currentTimeMillis());
         }
+
         order.setSymbol(req.getSymbol());
         order.setExchange(req.getExchange());
         order.setTransactionType(req.getTransactionType());

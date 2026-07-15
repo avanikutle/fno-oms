@@ -35,6 +35,10 @@ buildNumber.properties
 .mvn/timing.properties
 .mvn/wrapper/maven-wrapper.jar
 
+tt.json
+scripmaster.csv
+scripmaster2.csv
+
 # IDEA
 .idea/
 *.iml
