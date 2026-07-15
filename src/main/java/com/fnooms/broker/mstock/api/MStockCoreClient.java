@@ -50,38 +50,6 @@ public class MStockCoreClient {
         return execute(buildRequest(url, jsonBody, "DELETE"));
     }
 
-    public JsonObject executePostForm(String url, Map<String, String> formParams) throws BrokerException {
-        String authHeader = config.getAuthorizationHeader();
-        String apiVersion = config.getApiVersion();
-        String privateKey = config.getPrivateKey() != null ? config.getPrivateKey() : "";
-
-        log.info("MSTOCK DEBUG - Request POST URL: {}", url);
-        log.info("MSTOCK DEBUG - Request Headers: Authorization={}, X-Mirae-Version={}, X-PrivateKey={}",
-                authHeader, apiVersion, privateKey);
-
-        FormBody.Builder formBuilder = new FormBody.Builder();
-        StringBuilder formLog = new StringBuilder("MSTOCK DEBUG - Form Params: ");
-        for (Map.Entry<String, String> entry : formParams.entrySet()) {
-            formBuilder.add(entry.getKey(), entry.getValue());
-            formLog.append(entry.getKey()).append("=").append(entry.getValue()).append(", ");
-        }
-        log.info(formLog.toString());
-
-        Request.Builder builder = new Request.Builder()
-                .url(url)
-                .header("Authorization", authHeader)
-                .header("X-Mirae-Version", apiVersion)
-                .header("Content-Type", "application/x-www-form-urlencoded")
-                .header("Accept", "application/json")
-                .post(formBuilder.build());
-
-        if (privateKey != null && !privateKey.isBlank()) {
-            builder.header("X-PrivateKey", privateKey);
-        }
-
-        return execute(builder.build());
-    }
-
     private JsonObject execute(Request request) throws BrokerException {
         long start = System.currentTimeMillis();
         try (Response resp = http.newCall(request).execute()) {
@@ -134,23 +102,19 @@ public class MStockCoreClient {
     private Request buildRequest(String url, String jsonBody, String method) {
         String authHeader = config.getAuthorizationHeader();
         String apiVersion = config.getApiVersion();
-        String privateKey = config.getPrivateKey() != null ? config.getPrivateKey() : "";
+        String apiKey = config.getPrivateKey();
 
         log.info("MSTOCK DEBUG - URL: {}", url);
         log.info("MSTOCK DEBUG - Auth Header: {}", authHeader);
         log.info("MSTOCK DEBUG - X-Mirae-Version: {}", apiVersion);
-        log.info("MSTOCK DEBUG - X-PrivateKey: {}", privateKey);
 
         Request.Builder builder = new Request.Builder()
                 .url(url)
                 .header("Authorization", authHeader)
+                .header("X-PrivateKey", apiKey)
                 .header("X-Mirae-Version", apiVersion)
                 .header("Content-Type", "application/json")
                 .header("Accept", "application/json");
-
-        if (privateKey != null && !privateKey.isBlank()) {
-            builder.header("X-PrivateKey", privateKey);
-        }
 
         switch (method) {
             case "GET" -> builder.get();

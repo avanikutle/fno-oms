@@ -4,7 +4,7 @@ import com.fnooms.broker.BrokerException;
 import com.fnooms.broker.dto.OrderRequest;
 import com.fnooms.broker.dto.OrderResponse;
 import com.fnooms.broker.dto.Quote;
-import com.fnooms.model.BrokerConfig;
+
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
 import okhttp3.mockwebserver.RecordedRequest;
@@ -42,15 +42,8 @@ class MStockBrokerClientTest {
     @BeforeEach
     void setUp() {
         // Point client at the local mock server
-        BrokerConfig cfg = new BrokerConfig();
-        cfg.setApiKey("test-api-key-12345");
-        cfg.setPrivateKey("test-private-key");
-        cfg.setAccessToken("test-jwt-access-token");
-        cfg.setTokenExpiry(Instant.now().plusSeconds(3600));
-        cfg.setBrokerType("MSTOCK");
-
         // Override base URL to mock server
-        client = new MStockBrokerClientTestable(cfg, server.url("/").toString());
+        client = new MStockBrokerClientTestable(server.url("/").toString());
     }
 
     // ──────────────────────────────────────────────
@@ -196,8 +189,8 @@ class MStockBrokerClientTest {
     static class MStockBrokerClientTestable extends MStockBrokerClient {
         private final String baseUrl;
 
-        MStockBrokerClientTestable(BrokerConfig cfg, String baseUrl) {
-            super(cfg);
+        MStockBrokerClientTestable(String baseUrl) {
+            super();
             // Strip trailing slash
             this.baseUrl = baseUrl.endsWith("/")
                     ? baseUrl.substring(0, baseUrl.length() - 1)

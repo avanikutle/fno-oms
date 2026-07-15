@@ -1,73 +1,69 @@
 package com.fnooms.algo;
 
+import com.fnooms.dao.DatabaseManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.InputStream;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Properties;
 
 public class StrategyConfigLoader {
     private static final Logger log = LoggerFactory.getLogger(StrategyConfigLoader.class);
 
-    public static List<StrategyConfig> loadConfigs(String propertiesFileName) {
+    public static List<StrategyConfig> loadConfigs() {
         List<StrategyConfig> configs = new ArrayList<>();
-        Properties props = new Properties();
+        List<String> activeSymbols = new ArrayList<>();
 
-        try (InputStream in = StrategyConfigLoader.class.getClassLoader().getResourceAsStream(propertiesFileName)) {
-            if (in == null) {
-                log.error("Could not find {} in classpath.", propertiesFileName);
-                return configs;
-            }
-            props.load(in);
+        String sql = "SELECT scrip_name, exchange_id, name, entry_price, stop_loss, target_price, quantity, transaction_type, entry_condition, product, trailing_sl_points FROM strategies";
 
-            // Expecting keys like: strategy.symbols=INFY-EQ,TCS-EQ
-            String symbolsStr = props.getProperty("strategy.symbols");
-            if (symbolsStr == null || symbolsStr.isEmpty()) {
-                log.warn("No 'strategy.symbols' found in properties.");
-                return configs;
-            }
+        try (Connection conn = DatabaseManager.getInstance().getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql);
+             ResultSet rs = pstmt.executeQuery()) {
 
-            String[] symbolsArray = symbolsStr.split(",");
-            List<String> activeSymbols = new ArrayList<>();
-            for (String s : symbolsArray) {
-                activeSymbols.add(s.trim());
-            }
-            
-            // Hydrate the tiny in-memory map from the DB for ONLY these symbols
-            ScripMasterService.initActiveTokens(activeSymbols);
-
-            for (String symbol : activeSymbols) {
+            while (rs.next()) {
                 StrategyConfig config = new StrategyConfig();
+                String symbol = rs.getString("scrip_name");
                 config.setSymbol(symbol);
-                
-                // Get token from Scrip Master (which we just cached)
-                String token = ScripMasterService.getToken(symbol);
-                if (token == null) {
-                    log.warn("Token not found for symbol: {}. Make sure scrip master is loaded and symbol is correct.", symbol);
-                    continue; // Skip if we can't find token
-                }
-                config.setToken(token);
+                activeSymbols.add(symbol);
 
-                String prefix = "strategy." + symbol + ".";
-                config.setEntryPrice(Double.parseDouble(props.getProperty(prefix + "entryPrice")));
-                config.setStopLossPrice(Double.parseDouble(props.getProperty(prefix + "stopLossPrice")));
-                config.setTargetPrice(Double.parseDouble(props.getProperty(prefix + "targetPrice")));
-                config.setTrailingSlPoints(Double.parseDouble(props.getProperty(prefix + "trailingSlPoints", "0.0")));
-                config.setQuantity(Integer.parseInt(props.getProperty(prefix + "quantity")));
-                config.setTransactionType(props.getProperty(prefix + "transactionType", "BUY").toUpperCase());
-                config.setExchange(props.getProperty(prefix + "exchange", "NSE").toUpperCase());
-                config.setProduct(props.getProperty(prefix + "product", "MIS").toUpperCase());
-                
-                String conditionStr = props.getProperty(prefix + "entryCondition", "GREATER_THAN_EQUAL");
-                config.setEntryCondition(StrategyConfig.EntryCondition.valueOf(conditionStr));
+                config.setEntryPrice(rs.getDouble("entry_price"));
+                config.setStopLossPrice(rs.getDouble("stop_loss"));
+                config.setTargetPrice(rs.getDouble("target_price"));
+                config.setQuantity(rs.getInt("quantity"));
+                config.setTransactionType(rs.getString("transaction_type"));
+                config.setExchange(rs.getString("exchange_id"));
+                config.setProduct(rs.getString("product"));
+                config.setTrailingSlPoints(rs.getDouble("trailing_sl_points"));
+
+                String conditionStr = rs.getString("entry_condition");
+                if (conditionStr != null && !conditionStr.isEmpty()) {
+                    config.setEntryCondition(StrategyConfig.EntryCondition.valueOf(conditionStr));
+                } else {
+                    config.setEntryCondition(StrategyConfig.EntryCondition.GREATER_THAN_EQUAL);
+                }
 
                 configs.add(config);
             }
 
         } catch (Exception e) {
-            log.error("Failed to load strategy configs: {}", e.getMessage(), e);
+            log.error("Failed to load strategy configs from DB: {}", e.getMessage(), e);
+            return configs;
+        }
+
+        // Hydrate the tiny in-memory map from the DB for ONLY these symbols
+        ScripMasterService.initActiveTokens(activeSymbols);
+
+        // Populate tokens in configs
+        for (StrategyConfig config : configs) {
+            String token = ScripMasterService.getToken(config.getSymbol());
+            if (token == null) {
+                log.warn("Token not found for symbol: {}. Make sure scrip master is loaded and symbol is correct.", config.getSymbol());
+            } else {
+                config.setToken(token);
+            }
         }
 
         return configs;

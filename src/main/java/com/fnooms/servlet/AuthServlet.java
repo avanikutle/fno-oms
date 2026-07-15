@@ -1,7 +1,6 @@
 package com.fnooms.servlet;
 
-import com.fnooms.dao.BrokerConfigDAO;
-import com.fnooms.model.BrokerConfig;
+import com.fnooms.dao.AlgoKeyValueDAO;
 import com.fnooms.util.JsonUtil;
 import com.google.gson.JsonObject;
 import jakarta.servlet.annotation.WebServlet;
@@ -12,9 +11,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.time.Instant;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
 
 /**
  * Handles access token management for brokers.
@@ -25,7 +21,7 @@ import java.time.ZoneId;
 public class AuthServlet extends HttpServlet {
 
     private static final Logger log = LoggerFactory.getLogger(AuthServlet.class);
-    private final BrokerConfigDAO dao = new BrokerConfigDAO();
+    private final AlgoKeyValueDAO dao = new AlgoKeyValueDAO();
 
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws IOException {
@@ -43,28 +39,13 @@ public class AuthServlet extends HttpServlet {
                 if (token == null || token.isBlank())
                     throw new IllegalArgumentException("accessToken is required");
 
-                BrokerConfig cfg = configId > 0
-                        ? dao.findById(configId) : dao.getActive();
+                dao.setValue("mstock.jwt_token", token, "SYSTEM");
 
-                if (cfg == null) {
-                    JsonUtil.writeJson(resp, 404, JsonUtil.error("Broker config not found"));
-                    return;
-                }
-
-                cfg.setAccessToken(token);
-                // Token valid till midnight
-                cfg.setTokenExpiry(LocalDateTime.now()
-                        .toLocalDate().plusDays(1)
-                        .atStartOfDay(ZoneId.systemDefault())
-                        .toInstant());
-                dao.update(cfg);
-
-                log.info("Access token updated for broker={} configId={}", cfg.getBrokerType(), cfg.getId());
+                log.info("Access token updated for mStock in algo_key_value");
 
                 JsonObject result = new JsonObject();
                 result.addProperty("message",    "Token saved successfully");
-                result.addProperty("broker",     cfg.getDisplayName());
-                result.addProperty("expiresAt",  cfg.getTokenExpiry().toString());
+                result.addProperty("broker",     "MSTOCK");
                 JsonUtil.writeJson(resp, 200, JsonUtil.success(result));
 
             } catch (IllegalArgumentException e) {

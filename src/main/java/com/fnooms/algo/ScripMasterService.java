@@ -1,6 +1,7 @@
 package com.fnooms.algo;
 
 import com.fnooms.dao.AlgoKeyValueDAO;
+import com.fnooms.dao.DatabaseManager;
 import com.fnooms.dao.ScripMasterDAO;
 import com.fnooms.util.AngelOneScripMasterFetcher;
 import com.google.gson.Gson;
@@ -15,6 +16,9 @@ import java.io.Reader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
@@ -66,21 +70,51 @@ public class ScripMasterService {
     }
 
     /**
-     * Call this ONLY with the specific symbols you are actively trading (e.g., from strategy.properties).
-     * It looks them up in the Postgres DB and caches them in a tiny ConcurrentHashMap for high-frequency access.
+     * Call this ONLY with the specific symbols you are actively trading (e.g., from strategies table).
+     * It looks them up in the Postgres DB (either AngelOne or mStock) and caches them in a tiny ConcurrentHashMap.
      */
     public static void initActiveTokens(List<String> activeSymbols) {
         ScripMasterDAO scripDao = new ScripMasterDAO();
+        AlgoKeyValueDAO kvDao = new AlgoKeyValueDAO();
+        String orderBroker = kvDao.getValue("algo.orderBroker");
+        
         for (String symbol : activeSymbols) {
-            String token = scripDao.getTokenBySymbol(symbol);
+            String token = null;
+            if ("MSTOCK".equalsIgnoreCase(orderBroker)) {
+                // For mStock, we first try to find the instrument_token using the tradingsymbol from mstock_scrip_master
+                token = getMStockToken(symbol);
+                if (token == null) {
+                    // Fallback to AngelOne token as exchange token if mStock token is missing
+                    token = scripDao.getTokenBySymbol(symbol);
+                }
+            } else {
+                token = scripDao.getTokenBySymbol(symbol);
+            }
+            
             if (token != null) {
                 symbolToTokenMap.put(symbol, token);
                 tokenToSymbolMap.put(token, symbol);
                 log.info("Cached active symbol mapping: {} -> {}", symbol, token);
             } else {
-                log.warn("Could not find token for active symbol in scrip_master DB: {}", symbol);
+                log.warn("Could not find token for active symbol: {}", symbol);
             }
         }
+    }
+
+    private static String getMStockToken(String symbol) {
+        String sql = "SELECT instrument_token FROM mstock_scrip_master WHERE tradingsymbol = ?";
+        try (Connection conn = DatabaseManager.getInstance().getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, symbol);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getString("instrument_token");
+                }
+            }
+        } catch (Exception e) {
+            log.error("Error looking up mStock token for {}: {}", symbol, e.getMessage());
+        }
+        return null;
     }
 
     public static String getToken(String symbol) {

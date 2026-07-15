@@ -5,7 +5,6 @@ import com.fnooms.broker.BrokerException;
 import com.fnooms.broker.BrokerType;
 import com.fnooms.broker.dto.*;
 import com.fnooms.broker.mstock.api.*;
-import com.fnooms.model.BrokerConfig;
 import okhttp3.OkHttpClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,8 +32,8 @@ public class MStockBrokerClient implements BrokerClient {
     private final MStockBasketApi basketApi;
     private final MStockMarginApi marginApi;
 
-    public MStockBrokerClient(BrokerConfig brokerConfig) {
-        this.config = new MStockConfig(brokerConfig);
+    public MStockBrokerClient() {
+        this.config = new MStockConfig();
         OkHttpClient http = new OkHttpClient.Builder()
                 .connectTimeout(10, TimeUnit.SECONDS)
                 .readTimeout(15, TimeUnit.SECONDS)

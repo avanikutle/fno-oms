@@ -7,6 +7,15 @@ public class TradeState {
     
     private String entryOrderId;
     private String exitOrderId;
+    private int entryAttempts = 0;
+
+    public int getEntryAttempts() {
+        return entryAttempts;
+    }
+
+    public void setEntryAttempts(int entryAttempts) {
+        this.entryAttempts = entryAttempts;
+    }
 
     public boolean isEntered() {
         return isEntered;

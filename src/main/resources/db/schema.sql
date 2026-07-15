@@ -7,40 +7,17 @@
 CREATE EXTENSION IF NOT EXISTS timescaledb;
 
 -- ============================================================
--- Broker Configuration (pluggable broker store)
--- ============================================================
-CREATE TABLE IF NOT EXISTS broker_config (
-    id              SERIAL PRIMARY KEY,
-    broker_type     VARCHAR(50)  NOT NULL,       -- e.g. 'MSTOCK', 'ZERODHA'
-    display_name    VARCHAR(100) NOT NULL,
-    api_key         VARCHAR(500),                -- encrypted at app level in future
-    private_key     VARCHAR(500),
-    access_token    TEXT,                        -- JWT, valid till midnight
-    token_expiry    TIMESTAMP WITH TIME ZONE,
-    client_id       VARCHAR(100),                -- broker's client/user ID
-    is_active       BOOLEAN      NOT NULL DEFAULT FALSE,
-    created_at      TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    updated_at      TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
-
--- Only one broker can be active at a time
-CREATE UNIQUE INDEX IF NOT EXISTS idx_broker_config_active
-    ON broker_config (is_active)
-    WHERE is_active = TRUE;
-
--- ============================================================
 -- Orders (local audit trail of all placed orders)
 -- ============================================================
 CREATE TABLE IF NOT EXISTS orders (
     id                  SERIAL PRIMARY KEY,
     broker_order_id     VARCHAR(100),             -- broker-assigned order ID
-    broker_type         VARCHAR(50)  NOT NULL,
-    broker_config_id    INT REFERENCES broker_config(id),
-    symbol              VARCHAR(100) NOT NULL,     -- e.g. NIFTY24JUL24000CE
-    exchange            VARCHAR(20)  NOT NULL,     -- NSE, NFO, BSE, BFO
-    transaction_type    VARCHAR(10)  NOT NULL,     -- BUY, SELL
-    order_type          VARCHAR(20)  NOT NULL,     -- MARKET, LIMIT, SL, SL-M
-    product             VARCHAR(20)  NOT NULL,     -- MIS, NRML, CNC
+    broker_type         VARCHAR(50)  NOT NULL,    -- e.g. MSTOCK, ANGELONE
+    symbol              VARCHAR(100) NOT NULL,    -- e.g. NIFTY24JUL24000CE
+    exchange            VARCHAR(20)  NOT NULL,    -- NSE, NFO, BSE, BFO
+    transaction_type    VARCHAR(10)  NOT NULL,    -- BUY, SELL
+    order_type          VARCHAR(20)  NOT NULL,    -- MARKET, LIMIT, SL, SL-M
+    product             VARCHAR(20)  NOT NULL,    -- MIS, NRML, CNC
     quantity            INT          NOT NULL,
     price               DECIMAL(12, 2),
     trigger_price       DECIMAL(12, 2),
@@ -126,10 +103,6 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE OR REPLACE TRIGGER trg_broker_config_updated_at
-    BEFORE UPDATE ON broker_config
-    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-
 CREATE OR REPLACE TRIGGER trg_orders_updated_at
     BEFORE UPDATE ON orders
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
@@ -150,6 +123,18 @@ CREATE OR REPLACE TRIGGER trg_algo_key_value_updated_at
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 -- ============================================================
+-- Insert Default Credentials from old cred.properties
+-- ============================================================
+INSERT INTO algo_key_value (key_name, key_value) VALUES 
+('mstock.api_key', 'nRRoc4X2uClpzIqNHlUC5Q=='),
+('mstock.jwt_token', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJVU0VSTkFNRSI6Ik1BNjg3NiIsIkNMSUVOVE5BTUUiOiJTVURIRUVSIFJFRERZIExFTktBTEEiLCJVU0VSX0RFVEFJTFMiOiJwdzVDdS9xMnp0Y3JRcFdtRy9DcmVJaVQzUUJ4VVJ6NXRJZGhTWlRNR1p0NWpCUC9uRHA3OENZWTB0dDhaNGRkeVo0TEdrUlpFSEd0TFN4YzZwaWhveHB6cndGLzVqRmt3NEJ3U2NYYW5DSm43NTVrY2JobkhKT1JvUkRZMGhGZUJDM3hBeTZ3Z0owM0dVZVFHSWs2MnZaVENMOTlFTGhqMEowelVXR0IzbE8rREtmc3dsM25seVhaS1d5TVNXUnhSRFprZXZicnZaRy9MWmxVSFdWd0lzeWNnWVVCN3JKU1ZvTUlTa0xzb1Z1NlQrL1J5R3Y5R3NhWmMxa21uemVYek5mRWRDRnFSU3ZPVzFlVFdjam5HZlZaWHVndWsvRkl5ZldhTGxZL08reDZseUZ2NWJzSXRaNWJCV29lZ0Y1c2dzSmxvbkZzY0FaM3gyQXFKUnRwMHc9PSIsIlVTRVJJRCI6Ik1BNjg3NiIsIkFDQ0VTU19UT0tFTiI6ImV5SmhiR2NpT2lKSVV6STFOaUlzSW5SNWNDSTZJa3BYVkNKOS5leUpoZFdRaU9pSnRhWEpoWlM1cGJpSXNJbVY0Y0NJNk1UYzROREV6TmpVMU15d2lhV0YwSWpveE56ZzBNRFV3TVRVekxDSnBjM01pT2lKdGFYSmhaUzVwYmlJc0ltNWlaaUk2TVRRME5EUTNPRFF3TUN3aWNHWnRJam9pTVNJc0luUnBaQ0k2SWpZeElpd2lkV2xrSWpvaU5EZzFOemt3SWl3aWRtbGtJam9pTWpFaWZRLk5oS2lnWGdwWXdlUmZZd3o4YzUzQzJpX0hJdXRub0psYjlRV1VCZXdTdW8iLCJBUElUWVBFIjoiVFlQRUEiLCJVSUQiOiJjYWM0ZjEzMC0wOTg4LTQ3NjgtODFlYy00NTVlMDQ2ZmI5NDkiLCJuYmYiOjE3ODQwNTAxNTMsImV4cCI6MTc4NDA1MzgwMCwiaWF0IjoxNzg0MDUwMTUzfQ.dNFNbezsE7L2V3q_srkRwbcKIM8eqIn3xqQgVbntNQs'),
+('angelone.api_key', 'Cs4E2TqP'),
+('angelone.client_code', 'S54534677'),
+('angelone.jwt_token', 'eyJhbGciOiJIUzUxMiJ9.eyJ1c2VybmFtZSI6IlM1NDUzNDY3NyIsInJvbGVzIjowLCJ1c2VydHlwZSI6IlVTRVIiLCJ0b2tlbiI6ImV5SmhiR2NpT2lKU1V6STFOaUlzSW5SNWNDSTZJa3BYVkNKOS5leUoxYzJWeVgzUjVjR1VpT2lKamJHbGxiblFpTENKMGIydGxibDkwZVhCbElqb2lkSEpoWkdWZllXTmpaWE56WDNSdmEyVnVJaXdpWjIxZmFXUWlPakV4TENKemIzVnlZMlVpT2lJeklpd2laR1YyYVdObFgybGtJam9pTWpNNFpUUmhOVFl0WmpBd09DMHpOelF5TFdGbE1XSXRObVZrWWpRNVl6Y3daVFl6SWl3aWEybGtJam9pZEhKaFpHVmZhMlY1WDNZeUlpd2liMjF1WlcxaGJtRm5aWEpwWkNJNk1URXNJbkJ5YjJSMVkzUnpJanA3SW1SbGJXRjBJanA3SW5OMFlYUjFjeUk2SW1GamRHbDJaU0o5TENKdFppSTZleUp6ZEdGMGRYTWlPaUpoWTNScGRtVWlmU3dpYm1KMVRHVnVaR2x1WnlJNmV5SnpkR0YwZFhNaU9pSmhZM1JwZG1VaWZYMHNJbWx6Y3lJNkluUnlZV1JsWDJ4dloybHVYM05sY25acFkyVWlMQ0p6ZFdJaU9pSlROVFExTXpRMk56Y2lMQ0psZUhBaU9qRTNPRFF3T0RZek56TXNJbTVpWmlJNk1UYzRNems1T1RjNU15d2lhV0YwSWpveE56Z3pPVGs1TnprekxDSnFkR2tpT2lKa056RmlNakF5T1Mxak1XTmlMVFF5WldVdFlqYzFOUzAzTVdFelpXVTVaVFptTldVaUxDSlViMnRsYmlJNklpSjkuTHhMS1dmM2hZUUtOZDdXcXBtR2hYdnNzRW5PWmlOdG00bHhJc0t6aV92YlMxNU1sbFFfVWhTbmFFalVCM2hDLTd3TlR2cXRUTk9mMG42SkVma0tqZnBFRndwbDNtaV9vN1RxdVpYZ1laUGF0MFEyS3RKSnlRR19LUWNfNG53SERBaG5rd3VFdGxQU21mZGtDTlZIRzFMWUdaSnFVeGhDYlJ3UG5aQXFSTjc4IiwiQVBJLUtFWSI6IkNzNEUyVHFQIiwiaWF0IjoxNzgzOTk5OTczLCJleHAiOjE3ODQwNTM4MDB9._yqaBT1S50JyXwces4awGiSOKVKw9BD9p1B20_piPbyiicYhGTEm1-PNh4lklOlBLRpMMM_8ELS8qAI0MczmGA'),
+('angelone.feed_token', 'eyJhbGciOiJIUzUxMiJ9.eyJ1c2VybmFtZSI6IlM1NDUzNDY3NyIsImlhdCI6MTc4Mzk5OTk3MywiZXhwIjoxNzg0MDg2MzczfQ.Sul2m8izu01SCgQfGLL0_mzfs6u08bqj_1R8W6gJYKeMfVncAOVbw0hV6b-JhOgmpWiUfxQFZAGlXHC3KSxddg')
+ON CONFLICT (key_name) DO NOTHING;
+
+-- ============================================================
 -- Scrip Master (Instruments)
 -- ============================================================
 CREATE TABLE IF NOT EXISTS scrip_master (
@@ -164,5 +149,3 @@ CREATE TABLE IF NOT EXISTS scrip_master (
     tick_size DECIMAL(12, 4)
 );
 CREATE INDEX IF NOT EXISTS idx_scrip_master_symbol ON scrip_master(symbol);
-
-

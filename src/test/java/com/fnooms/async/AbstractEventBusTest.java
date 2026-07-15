@@ -125,7 +125,7 @@ class AbstractEventBusTest {
         OrderResponse resp = new OrderResponse();
         resp.setBrokerOrderId("TEST-" + System.nanoTime());
         resp.setStatus("OPEN");
-        return new OrderEvent(OrderEvent.Type.PLACED, req, resp, "MSTOCK", 1);
+        return new OrderEvent(OrderEvent.Type.PLACED, req, resp, "MSTOCK");
     }
 
     /**

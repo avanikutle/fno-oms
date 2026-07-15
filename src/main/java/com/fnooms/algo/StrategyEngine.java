@@ -3,8 +3,6 @@ package com.fnooms.algo;
 import com.fnooms.broker.dto.OrderRequest;
 import com.fnooms.broker.dto.OrderResponse;
 import com.fnooms.service.OrderService;
-import com.fnooms.dao.AlgoKeyValueDAO;
-import com.google.gson.Gson;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -15,49 +13,22 @@ public class StrategyEngine {
     private static final Logger log = LoggerFactory.getLogger(StrategyEngine.class);
 
     private final OrderService orderService;
-    private final String targetBrokerType;
-    private final AlgoKeyValueDAO kvDao;
-    private final Gson gson;
-
     private final Map<String, StrategyConfig> configs = new ConcurrentHashMap<>();
     private final Map<String, TradeState> states = new ConcurrentHashMap<>();
 
-    public StrategyEngine(OrderService orderService, String targetBrokerType) {
+    public StrategyEngine(OrderService orderService) {
         this.orderService = orderService;
-        this.targetBrokerType = targetBrokerType;
-        this.kvDao = new AlgoKeyValueDAO();
-        this.gson = new Gson();
     }
 
     public void addConfig(StrategyConfig config) {
         configs.put(config.getSymbol(), config);
-
-        // Recover state from DB if exists
-        String stateKey = "tradestate." + config.getSymbol();
-        String savedStateJson = kvDao.getValue(stateKey);
-
-        if (savedStateJson != null) {
-            TradeState state = gson.fromJson(savedStateJson, TradeState.class);
-            states.put(config.getSymbol(), state);
-            log.info("Recovered trade state for symbol {}: {}", config.getSymbol(),
-                    state.isEntered() ? "ENTERED" : "NOT_ENTERED");
-        } else {
-            states.put(config.getSymbol(), new TradeState());
-            log.info("Loaded new strategy config for symbol: {}", config.getSymbol());
-        }
-    }
-
-    private void saveState(String symbol, TradeState state) {
-        String stateKey = "tradestate." + symbol;
-        String json = gson.toJson(state);
-        kvDao.setValue(stateKey, json, "SYSTEM");
+        states.put(config.getSymbol(), new TradeState());
+        log.info("Loaded strategy config for symbol: {}", config.getSymbol());
     }
 
     public void resetState(String symbol) {
         if (states.containsKey(symbol)) {
-            TradeState state = new TradeState();
-            states.put(symbol, state);
-            saveState(symbol, state);
+            states.put(symbol, new TradeState());
             log.info("Manually reset trade state for symbol: {}", symbol);
         }
     }
@@ -108,7 +79,6 @@ public class StrategyEngine {
                 double newSl = currentPrice - config.getTrailingSlPoints();
                 if (newSl > state.getCurrentStopLoss()) {
                     state.setCurrentStopLoss(newSl);
-                    saveState(symbol, state);
                     log.info("Trailing SL for {} updated to {}", symbol, newSl);
                 }
             }
@@ -127,16 +97,16 @@ public class StrategyEngine {
                     .exchange(config.getExchange())
                     .product(config.getProduct())
                     .market()
+
                     .quantity(config.getQuantity());
 
             request.setTransactionType(config.getTransactionType());
-
-            OrderResponse response = orderService.placeOrder(request, targetBrokerType);
+            request.setAmo(true);
+            OrderResponse response = orderService.placeOrder(request);
             if (response != null && response.getBrokerOrderId() != null) {
                 state.setEntryOrderId(response.getBrokerOrderId());
                 state.setEntered(true);
                 state.setCurrentStopLoss(config.getStopLossPrice());
-                saveState(config.getSymbol(), state);
                 log.info("Successfully entered trade for {}. OrderId: {}", config.getSymbol(),
                         response.getBrokerOrderId());
             } else {
@@ -161,11 +131,10 @@ public class StrategyEngine {
 
             request.setTransactionType(exitSide);
 
-            OrderResponse response = orderService.placeOrder(request, targetBrokerType);
+            OrderResponse response = orderService.placeOrder(request);
             if (response != null && response.getBrokerOrderId() != null) {
                 state.setExitOrderId(response.getBrokerOrderId());
                 state.setExited(true); // Prevents further entries
-                saveState(config.getSymbol(), state);
                 log.info("Successfully exited trade for {}. OrderId: {}", config.getSymbol(),
                         response.getBrokerOrderId());
             } else {

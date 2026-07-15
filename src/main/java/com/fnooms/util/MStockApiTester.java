@@ -2,51 +2,32 @@ package com.fnooms.util;
 
 import com.fnooms.broker.dto.OrderRequest;
 import com.fnooms.broker.mstock.MStockBrokerClient;
-import com.fnooms.model.BrokerConfig;
 
 import java.io.InputStream;
 import java.util.Properties;
 
+import com.fnooms.util.CredsUtil;
+
 /**
  * Utility class with a main method to quickly test and debug mStock API calls.
- * Pulls credentials from src/main/resources/cred.properties.
  */
 public class MStockApiTester {
 
     public static void main(String[] args) {
         System.out.println("=== Starting MStock API Tester ===");
 
-        Properties props = new Properties();
-        try (InputStream is = MStockApiTester.class.getClassLoader().getResourceAsStream("cred.properties")) {
-            if (is == null) {
-                System.err.println("Could not find cred.properties in resources folder!");
-                return;
-            }
-            props.load(is);
-        } catch (Exception e) {
-            e.printStackTrace();
-            return;
-        }
-
-        String apiKey = props.getProperty("mstock.api_key");
-        String jwtToken = props.getProperty("mstock.jwt_token");
+        String apiKey = CredsUtil.getMStockApiKey();
+        String jwtToken = CredsUtil.getMStockJwtToken();
 
         if (apiKey == null || jwtToken == null) {
-            System.err.println("Missing mstock.api_key or mstock.jwt_token in cred.properties");
+            System.err.println("Missing mstock.api_key or mstock.jwt_token in DB");
             return;
         }
 
         System.out.println("Credentials loaded successfully.");
 
-        // Create a dummy BrokerConfig
-        BrokerConfig config = new BrokerConfig();
-        config.setBrokerType("MSTOCK");
-        config.setApiKey(apiKey);
-        config.setAccessToken(jwtToken);
-        config.setActive(true);
-
         // Instantiate the SDK Client
-        MStockBrokerClient client = new MStockBrokerClient(config);
+        MStockBrokerClient client = new MStockBrokerClient();
 
         try {
             System.out.println("\n--- 1. Testing Order Book ---");

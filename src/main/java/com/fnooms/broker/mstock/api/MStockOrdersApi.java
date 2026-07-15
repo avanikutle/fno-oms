@@ -28,23 +28,28 @@ public class MStockOrdersApi {
     }
 
     public OrderResponse placeOrder(OrderRequest req) throws BrokerException {
-        Map<String, String> formParams = new LinkedHashMap<>();
-        formParams.put("tradingsymbol",    req.getSymbol());
-        formParams.put("exchange",         req.getExchange());
-        formParams.put("transaction_type", req.getTransactionType());
-        formParams.put("order_type",       req.getOrderType());
-        formParams.put("product",          req.getProduct());
-        formParams.put("quantity",         String.valueOf(req.getQuantity()));
-        formParams.put("validity",         req.getValidity() != null ? req.getValidity() : "DAY");
+        JsonObject payload = new JsonObject();
+        String token = com.fnooms.algo.ScripMasterService.getToken(req.getSymbol());
+        
+        payload.addProperty("variety", "NORMAL");
+        payload.addProperty("tradingsymbol", token != null ? token : req.getSymbol());
+        payload.addProperty("symboltoken", token != null ? token : req.getSymbol()); // Some Type B APIs require both
+        payload.addProperty("exchange", req.getExchange());
+        payload.addProperty("transactiontype", req.getTransactionType());
+        payload.addProperty("ordertype", req.getOrderType());
+        payload.addProperty("producttype", req.getProduct());
+        payload.addProperty("quantity", String.valueOf(req.getQuantity()));
+        payload.addProperty("duration", req.getValidity() != null ? req.getValidity() : "DAY");
 
-        if (req.getPrice() != null)
-            formParams.put("price", String.valueOf(req.getPrice()));
-        if (req.getTriggerPrice() != null)
-            formParams.put("trigger_price", String.valueOf(req.getTriggerPrice()));
-        if (req.getTag() != null)
-            formParams.put("tag", req.getTag());
+        payload.addProperty("price", req.getPrice() != null ? String.valueOf(req.getPrice()) : "0");
+        payload.addProperty("triggerprice", req.getTriggerPrice() != null ? String.valueOf(req.getTriggerPrice()) : "0");
+        payload.addProperty("squareoff", "0");
+        payload.addProperty("stoploss", "0");
+        payload.addProperty("trailingStopLoss", "");
+        payload.addProperty("disclosedquantity", "");
+        payload.addProperty("ordertag", req.getTag() != null ? req.getTag() : "");
 
-        JsonObject resp = core.executePostForm(core.getBaseUrl() + "/orders/regular", formParams);
+        JsonObject resp = core.executePost(core.getBaseUrl() + "/orders/regular", payload.toString());
 
         OrderResponse order = new OrderResponse();
         JsonObject data = core.safeGetObject(resp, "data");
@@ -107,10 +112,12 @@ public class MStockOrdersApi {
 
     public OrderResponse modifyOrder(String brokerOrderId, OrderRequest updated) throws BrokerException {
         JsonObject payload = new JsonObject();
-        if (updated.getQuantity() > 0)      payload.addProperty("quantity",      updated.getQuantity());
-        if (updated.getPrice() != null)      payload.addProperty("price",         updated.getPrice());
-        if (updated.getTriggerPrice() != null) payload.addProperty("trigger_price", updated.getTriggerPrice());
-        if (updated.getOrderType() != null)  payload.addProperty("order_type",    updated.getOrderType());
+        payload.addProperty("variety", "NORMAL");
+        if (updated.getQuantity() > 0)      payload.addProperty("quantity",      String.valueOf(updated.getQuantity()));
+        if (updated.getPrice() != null)      payload.addProperty("price",         String.valueOf(updated.getPrice()));
+        if (updated.getTriggerPrice() != null) payload.addProperty("triggerprice", String.valueOf(updated.getTriggerPrice()));
+        if (updated.getOrderType() != null)  payload.addProperty("ordertype",    updated.getOrderType());
+        payload.addProperty("duration", updated.getValidity() != null ? updated.getValidity() : "DAY");
 
         core.executePut(core.getBaseUrl() + "/orders/regular/" + brokerOrderId, payload.toString());
 

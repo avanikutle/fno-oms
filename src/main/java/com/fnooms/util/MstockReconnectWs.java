@@ -38,7 +38,7 @@ public class MstockReconnectWs {
                         webSocket.request(1);
 
                         // Send login message to maintain session
-                        webSocket.sendText("LOGIN:" + CredsUtil.getAccessToken(), true);
+                        webSocket.sendText("LOGIN:" + CredsUtil.getMStockJwtToken(), true);
                         // "token": "51370", "symbol": "NIFTY14JUL2624000CE",
                         // "token": "51378", "symbol": "NIFTY14JUL2624150PE",
                         String subscribeMsg = """

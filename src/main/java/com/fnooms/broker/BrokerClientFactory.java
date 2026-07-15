@@ -1,65 +1,42 @@
 package com.fnooms.broker;
 
 import com.fnooms.broker.mstock.MStockBrokerClient;
-import com.fnooms.dao.BrokerConfigDAO;
-import com.fnooms.model.BrokerConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import com.fnooms.dao.AlgoKeyValueDAO;
 
 /**
  * Factory that returns the currently active BrokerClient implementation.
- *
- * <p>Reads the active broker config from the database and instantiates
- * the appropriate client. Cached per request cycle — DB is only hit
- * when the active broker changes.
  */
 public class BrokerClientFactory {
 
     private static final Logger log = LoggerFactory.getLogger(BrokerClientFactory.class);
-    private static final BrokerConfigDAO configDAO = new BrokerConfigDAO();
+    private static final AlgoKeyValueDAO dao = new AlgoKeyValueDAO();
 
     private BrokerClientFactory() {}
 
     /**
      * Returns a fully initialised BrokerClient for the currently active broker.
-     *
-     * @throws IllegalStateException if no active broker is configured
      */
     public static BrokerClient getActiveClient() {
-        BrokerConfig config = configDAO.getActive();
-        if (config == null) {
-            throw new IllegalStateException(
-                    "No active broker configured. Please go to Settings and add a broker.");
+        // Here you can use algo_key_value to decide the default broker.
+        // For now, we will default to MSTOCK as it's the primary execution broker.
+        String activeType = dao.getValue("algo.activeBroker");
+        if (activeType == null) {
+            activeType = "MSTOCK"; // Fallback
         }
-        return buildClient(config);
+        return buildClient(BrokerType.fromString(activeType));
     }
 
-    /**
-     * Returns a BrokerClient for a specific config (e.g. for test-connection calls).
-     */
-    public static BrokerClient getClientFor(BrokerConfig config) {
-        return buildClient(config);
+    public static BrokerClient getClientFor(String brokerTypeStr) {
+        return buildClient(BrokerType.fromString(brokerTypeStr));
     }
 
-    private static BrokerClient buildClient(BrokerConfig config) {
-        BrokerType type;
-        try {
-            type = BrokerType.fromString(config.getBrokerType());
-        } catch (IllegalArgumentException e) {
-            throw new IllegalStateException("Unsupported broker type: " + config.getBrokerType(), e);
-        }
-
+    private static BrokerClient buildClient(BrokerType type) {
         switch (type) {
             case MSTOCK:
-                log.debug("Creating MStockBrokerClient for config id={}", config.getId());
-                return new MStockBrokerClient(config);
-
-            // Future integrations — add cases here:
-            // case ZERODHA:
-            //     return new ZerodhaBrokerClient(config);
-            // case UPSTOX:
-            //     return new UpstoxBrokerClient(config);
-
+                log.debug("Creating MStockBrokerClient");
+                return new MStockBrokerClient();
             default:
                 throw new IllegalStateException("No implementation for broker: " + type);
         }

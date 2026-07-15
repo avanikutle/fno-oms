@@ -76,7 +76,6 @@ public class OrderEventBus extends AbstractEventBus<OrderEvent> {
             o.setValidity(event.getRequest().getValidity());
         }
         o.setBrokerType(event.getBrokerType());
-        o.setBrokerConfigId(event.getBrokerConfigId());
         o.setPlacedAt(event.getEventTime());
         o.setUpdatedAt(Instant.now());
         return o;

@@ -63,7 +63,7 @@ public class MstockDataListener implements MarketDataListener {
                         webSocket.request(1);
 
                         // Send login message to maintain session
-                        webSocket.sendText("LOGIN:" + CredsUtil.getAccessToken(), true);
+                        webSocket.sendText("LOGIN:" + CredsUtil.getMStockJwtToken(), true);
 
                         // Build dynamic subscription payload based on configured tokens
                         List<String> tokens = configs.stream()

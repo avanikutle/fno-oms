@@ -11,7 +11,6 @@ public class Order {
     private Long      id;
     private String    brokerOrderId;
     private String    brokerType;
-    private Integer   brokerConfigId;
     private String    symbol;
     private String    exchange;
     private String    transactionType;
@@ -41,9 +40,6 @@ public class Order {
 
     public String    getBrokerType()                { return brokerType; }
     public void      setBrokerType(String v)        { this.brokerType = v; }
-
-    public Integer   getBrokerConfigId()            { return brokerConfigId; }
-    public void      setBrokerConfigId(Integer v)   { this.brokerConfigId = v; }
 
     public String    getSymbol()                    { return symbol; }
     public void      setSymbol(String v)            { this.symbol = v; }
