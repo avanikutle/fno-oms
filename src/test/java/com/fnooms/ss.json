@@ -1,0 +1,43 @@
+{
+    "status": "success",
+    "data": {
+        "user_type": "individual",
+        "email": "",
+        "user_name": "SUDHEER REDDY LENKALA",
+        "user_shortname": "CDSL",
+        "broker": "MIRAE",
+        "exchanges": [
+            "BEQ",
+            "BFO",
+            "NEQ",
+            "NFO",
+            "NCR",
+            "BSEMF",
+            "NSEIPO",
+            "BSEIPO"
+        ],
+        "products": [
+            "CNC",
+            "NRML",
+            "MIS"
+        ],
+        "order_types": [
+            "MARKET",
+            "LIMIT",
+            "SL",
+            "SL-M"
+        ],
+        "avatar_url": "",
+        "user_id": "6544",
+        "api_key": "nRRoc4X2uClpzIqNHlUC5Q==",
+        "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJVU0VSTkFNRSI6Ik1BNjg3NiIsIkNMSUVOVE5BTUUiOiJTVURIRUVSIFJFRERZIExFTktBTEEiLCJVU0VSX0RFVEFJTFMiOiIvVWJkZG9MZmpMbVVtdEcwbWdDNHpCaVlCYTAyMys1M09xNFNPcTVLYitaRmFyZ1dWRXc3cE9GMXo2NjJjNzNvWjBNQnBPNHJ2NUxlSW5ucTRvemsrRGlzNmZvMVNzS2NvR1FkSWVKRmdPSkZyL2dNYlhWcW00U3lqWHdEOXpPejl0RWRNMUxOdmFoOHZDT0ZIZTNrK0V1Ry9Wb05NaGg4WGwxTU5Gb1pKUVk1S1AxWnh0a3QxSWkwK3phd0ZHYnNaWnNMbzljNjZOOWJYamgySnpXOURLZUZYaFVTdkhsS3R0NFZNazRMcU1xaXJkdEpCb2VqRDE2eFM1QTJPODVuSThWdU81MStXamR3U0FUcHp2NW95TUg1THZpL2JQSE9NSjY1ZmRkWHhkY0lqODlXRkhjVkRob0FlR29zVytVU3NQaHd5OEhPR0tUb3YzU1daWUtSRlE9PSIsIlVTRVJJRCI6Ik1BNjg3NiIsIkFDQ0VTU19UT0tFTiI6ImV5SmhiR2NpT2lKSVV6STFOaUlzSW5SNWNDSTZJa3BYVkNKOS5leUpoZFdRaU9pSnRhWEpoWlM1cGJpSXNJbVY0Y0NJNk1UYzRNems1T0RneU55d2lhV0YwSWpveE56Z3pPVEV5TkRJM0xDSnBjM01pT2lKdGFYSmhaUzVwYmlJc0ltNWlaaUk2TVRRME5EUTNPRFF3TUN3aWNHWnRJam9pTVNJc0luUnBaQ0k2SWpRNElpd2lkV2xrSWpvaU5EZzFOemt3SWl3aWRtbGtJam9pTWpFaWZRLldnQnU1ZHJzQzdzXzhWdnNTekcxTXNnNFA1MGtaUFVzQVVKbE85cGUzU0kiLCJBUElUWVBFIjoiVFlQRUEiLCJVSUQiOiI1YTQxZjI0MC00NDVjLTRkNmEtYmU4MC1kY2U5NDEyMGYzOGMiLCJuYmYiOjE3ODM5MTI0MjcsImV4cCI6MTc4Mzk2NzQwMCwiaWF0IjoxNzgzOTEyNDI3fQ.qQL0GYbGePkkUfaeSegTI74Q6xBw8iHpsPpME38RjvQ",
+        "public_token": "5a41f240-445c-4d6a-be80-dce94120f38c",
+        "enctoken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJtaXJhZS5pbiIsImV4cCI6MTc4Mzk5ODgyNywiaWF0IjoxNzgzOTEyNDI3LCJpc3MiOiJtaXJhZS5pbiIsIm5iZiI6MTQ0NDQ3ODQwMCwicGZtIjoiMSIsInRpZCI6IjQ4IiwidWlkIjoiNDg1NzkwIiwidmlkIjoiMjEifQ.WgBu5drsC7s_8VvsSzG1Msg4P50kZPUsAUJlO9pe3SI",
+        "refresh_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJtaXJhZS5pbiIsImV4cCI6MTc4NjUwNDQyNywiaWF0IjoxNzgzOTEyNDI3LCJpc3MiOiJtaXJhZS5pbiIsIm5iZiI6MTQ0NDQ3ODQwMCwicGZtIjoiMSIsInRpZCI6IjQ4IiwidWlkIjoiNDg1NzkwIiwidmlkIjoiMjEifQ.hfinKLznVBHr0XT6a-BgF5NqoyUiqYr3T4HVSiR-QFo",
+        "silo": "",
+        "login_time": "2026-07-13 08:43:47",
+        "meta": {
+            "demat_consent": "physical"
+        }
+    }
+}% 

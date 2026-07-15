@@ -51,3 +51,6 @@ buildNumber.properties
 # TimescaleDB data
 pgdata/
 data/
+
+# Credentials
+src/main/resources/cred.properties

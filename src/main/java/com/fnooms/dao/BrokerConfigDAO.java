@@ -38,6 +38,21 @@ public class BrokerConfigDAO {
         return null;
     }
 
+    public BrokerConfig findByType(String brokerType) {
+        String sql = "SELECT * FROM broker_config WHERE broker_type = ? LIMIT 1";
+        try (Connection c = DatabaseManager.getInstance().getConnection();
+             PreparedStatement ps = c.prepareStatement(sql)) {
+            ps.setString(1, brokerType);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) return mapRow(rs);
+            }
+        } catch (SQLException e) {
+            log.error("findByType brokerConfig type={} failed", brokerType, e);
+        }
+        return null;
+    }
+
+
     public BrokerConfig findById(int id) {
         String sql = "SELECT * FROM broker_config WHERE id = ?";
         try (Connection c = DatabaseManager.getInstance().getConnection();

@@ -1,0 +1,50 @@
+package com.fnooms.algo;
+
+public class TradeState {
+    private boolean isEntered = false;
+    private boolean isExited = false;
+    private double currentStopLoss = 0.0;
+    
+    private String entryOrderId;
+    private String exitOrderId;
+
+    public boolean isEntered() {
+        return isEntered;
+    }
+
+    public void setEntered(boolean entered) {
+        isEntered = entered;
+    }
+
+    public boolean isExited() {
+        return isExited;
+    }
+
+    public void setExited(boolean exited) {
+        isExited = exited;
+    }
+
+    public double getCurrentStopLoss() {
+        return currentStopLoss;
+    }
+
+    public void setCurrentStopLoss(double currentStopLoss) {
+        this.currentStopLoss = currentStopLoss;
+    }
+
+    public String getEntryOrderId() {
+        return entryOrderId;
+    }
+
+    public void setEntryOrderId(String entryOrderId) {
+        this.entryOrderId = entryOrderId;
+    }
+
+    public String getExitOrderId() {
+        return exitOrderId;
+    }
+
+    public void setExitOrderId(String exitOrderId) {
+        this.exitOrderId = exitOrderId;
+    }
+}

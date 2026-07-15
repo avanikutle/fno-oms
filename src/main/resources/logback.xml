@@ -10,15 +10,22 @@
 
     <!-- Rolling File Appender specific to this app -->
     <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <!-- catalina.base is provided by Tomcat automatically -->
-        <file>${catalina.base}/logs/fno-oms/fno-oms.log</file>
-
-        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
-            <!-- daily rollover with archiving -->
-            <fileNamePattern>${catalina.base}/logs/fno-oms/fno-oms.%d{yyyy-MM-dd}.log</fileNamePattern>
-            <!-- keep 30 days' worth of history -->
-            <maxHistory>30</maxHistory>
-        </rollingPolicy>
+        <if condition='isDefined("catalina.base")'>
+            <then>
+                <file>${catalina.base}/logs/web-logs/fno-oms-web.log</file>
+                <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+                    <fileNamePattern>${catalina.base}/logs/web-logs/fno-oms-web.%d{yyyy-MM-dd}.log</fileNamePattern>
+                    <maxHistory>30</maxHistory>
+                </rollingPolicy>
+            </then>
+            <else>
+                <file>app-logs/fno-app-process.log</file>
+                <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+                    <fileNamePattern>app-logs/fno-app-process.%d{yyyy-MM-dd}.log</fileNamePattern>
+                    <maxHistory>30</maxHistory>
+                </rollingPolicy>
+            </else>
+        </if>
 
         <encoder>
             <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>

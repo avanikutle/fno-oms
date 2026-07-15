@@ -53,12 +53,14 @@ public class MStockApiTester {
             var orders = client.getOrderBook();
             System.out.println("Order Book count: " + (orders != null ? orders.size() : 0));
             if (orders != null && !orders.isEmpty()) {
-                orders.forEach(o -> System.out.println(" - " + o.getSymbol() + " " + o.getTransactionType() + " " + o.getStatus()));
+                orders.forEach(o -> System.out
+                        .println(" - " + o.getSymbol() + " " + o.getTransactionType() + " " + o.getStatus()));
             }
 
             // System.out.println("\n--- 2. Testing Trade Book ---");
             // var trades = client.getTradeBook();
-            // System.out.println("Trade Book count: " + (trades != null ? trades.size() : 0));
+            // System.out.println("Trade Book count: " + (trades != null ? trades.size() :
+            // 0));
 
             System.out.println("\n--- 3. Testing Portfolio (Holdings + Positions) ---");
             var holdings = client.getHoldings();
@@ -68,17 +70,18 @@ public class MStockApiTester {
 
             System.out.println("\n--- 4. Testing Order Placement (Uncomment to execute) ---");
             /*
-            OrderRequest req = new OrderRequest()
-                    .symbol("INFY-EQ")
-                    .exchange("NSE")
-                    .buy()
-                    .market() // Or .limit(1200.0)
-                    .quantity(1)
-                    .product("CNC"); // CNC for delivery, MIS for intraday
-
-            var placedOrder = client.placeOrder(req);
-            System.out.println("Order placed! Broker Order ID: " + placedOrder.getBrokerOrderId());
-            */
+             * OrderRequest req = new OrderRequest()
+             * .symbol("INFY-EQ")
+             * .exchange("NSE")
+             * .buy()
+             * .market() // Or .limit(1200.0)
+             * .quantity(1)
+             * .product("CNC"); // CNC for delivery, MIS for intraday
+             * 
+             * var placedOrder = client.placeOrder(req);
+             * System.out.println("Order placed! Broker Order ID: " +
+             * placedOrder.getBrokerOrderId());
+             */
 
             System.out.println("\n=== All Tests Completed ===");
 

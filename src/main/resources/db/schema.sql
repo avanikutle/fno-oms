@@ -133,3 +133,36 @@ CREATE OR REPLACE TRIGGER trg_broker_config_updated_at
 CREATE OR REPLACE TRIGGER trg_orders_updated_at
     BEFORE UPDATE ON orders
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+-- ============================================================
+-- Algo Settings & State Persistence
+-- ============================================================
+CREATE TABLE IF NOT EXISTS algo_key_value (
+    id SERIAL PRIMARY KEY,
+    key_name VARCHAR(100) UNIQUE NOT NULL,
+    key_value TEXT NOT NULL,
+    updated_by VARCHAR(50) DEFAULT 'SYSTEM',
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE OR REPLACE TRIGGER trg_algo_key_value_updated_at
+    BEFORE UPDATE ON algo_key_value
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+-- ============================================================
+-- Scrip Master (Instruments)
+-- ============================================================
+CREATE TABLE IF NOT EXISTS scrip_master (
+    token VARCHAR(50) PRIMARY KEY,
+    symbol VARCHAR(100) NOT NULL,
+    name VARCHAR(100),
+    expiry VARCHAR(50),
+    strike DECIMAL(12, 2),
+    lot_size INT,
+    instrument_type VARCHAR(20),
+    exch_seg VARCHAR(20),
+    tick_size DECIMAL(12, 4)
+);
+CREATE INDEX IF NOT EXISTS idx_scrip_master_symbol ON scrip_master(symbol);
+
+

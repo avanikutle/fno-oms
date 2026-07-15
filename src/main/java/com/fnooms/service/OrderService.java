@@ -38,16 +38,33 @@ public class OrderService {
     private final OrderDAO        orderDAO  = new OrderDAO();
 
     public OrderResponse placeOrder(OrderRequest request) throws BrokerException {
+        // Fallback to active broker if none specified
         BrokerConfig activeCfg = configDAO.getActive();
         if (activeCfg == null) {
             throw new BrokerException("No active broker configured. Please go to Settings.");
         }
+        return placeOrderInternal(request, activeCfg);
+    }
+
+    public OrderResponse placeOrder(OrderRequest request, String targetBrokerType) throws BrokerException {
+        if (targetBrokerType == null || targetBrokerType.isEmpty()) {
+            return placeOrder(request);
+        }
         
+        BrokerConfig targetCfg = configDAO.findByType(targetBrokerType);
+        if (targetCfg == null) {
+            log.warn("Broker type '{}' not found, falling back to active broker.", targetBrokerType);
+            return placeOrder(request);
+        }
+        return placeOrderInternal(request, targetCfg);
+    }
+
+    private OrderResponse placeOrderInternal(OrderRequest request, BrokerConfig config) throws BrokerException {
         if (orderDAO.hasOpenOrderForSymbol(request.getSymbol())) {
             throw new BrokerException("An open order already exists for symbol: " + request.getSymbol());
         }
 
-        BrokerClient client = BrokerClientFactory.getClientFor(activeCfg);
+        BrokerClient client = BrokerClientFactory.getClientFor(config);
         long start = System.currentTimeMillis();
 
         // ── SYNCHRONOUS: actual order placement ──────────────────────────
@@ -57,10 +74,10 @@ public class OrderService {
 
         // ── ASYNC: persist to DB (fire-and-forget, never blocks) ─────────
         OrderEventBus.getInstance().publish(
-                new OrderEvent(OrderEvent.Type.PLACED, request, response, activeCfg.getBrokerType(), activeCfg.getId()));
+                new OrderEvent(OrderEvent.Type.PLACED, request, response, config.getBrokerType(), config.getId()));
 
         AuditEventBus.getInstance().publish(
-                new AuditEvent("PLACE_ORDER", activeCfg.getBrokerType(),
+                new AuditEvent("PLACE_ORDER", config.getBrokerType(),
                         "/orders", request.toString(), response.toString(),
                         200, latency, null));
         // ─────────────────────────────────────────────────────────────────
