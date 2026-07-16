@@ -40,7 +40,7 @@
     </appender>
 
     <!-- Configure specific loggers -->
-    <logger name="com.fnooms" level="DEBUG" />
+    <logger name="com.fnooms" level="INFO" />
     <logger name="com.zaxxer.hikari" level="INFO" />
 
     <!-- Root logger -->

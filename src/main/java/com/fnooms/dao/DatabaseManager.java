@@ -83,8 +83,27 @@ public class DatabaseManager {
         }
     }
 
-    /** Run schema.sql from classpath — idempotent (uses IF NOT EXISTS). */
+    /** Run schema.sql from classpath based on a flag in algo_key_value. */
     private void runSchema() {
+        boolean shouldRun = true;
+        try (Connection conn = getConnection();
+             Statement stmt = conn.createStatement();
+             java.sql.ResultSet rs = stmt.executeQuery("SELECT key_value FROM algo_key_value WHERE key_name = 'schema.run'")) {
+            if (rs.next()) {
+                String val = rs.getString(1);
+                if ("false".equalsIgnoreCase(val)) {
+                    shouldRun = false;
+                }
+            }
+        } catch (SQLException e) {
+            // Table might not exist yet, proceed to run schema
+        }
+
+        if (!shouldRun) {
+            log.info("Skipping schema.sql execution based on algo_key_value flag (schema.run = false).");
+            return;
+        }
+
         try (InputStream is = getClass().getClassLoader()
                 .getResourceAsStream("db/schema.sql")) {
             if (is == null) {
@@ -98,9 +117,12 @@ public class DatabaseManager {
                  Statement stmt = conn.createStatement()) {
                 stmt.execute(sql);
                 log.info("Schema migration complete.");
+                
+                // Set the flag to prevent running again
+                stmt.executeUpdate("INSERT INTO algo_key_value (key_name, key_value, updated_by) VALUES ('schema.run', 'false', 'SYSTEM') ON CONFLICT(key_name) DO UPDATE SET key_value='false'");
             }
         } catch (Exception e) {
-            log.error("Schema migration failed — application may not function correctly", e);
+            log.error("Failed to run schema.sql: {}", e.getMessage(), e);
         }
     }
 }

@@ -70,10 +70,16 @@ public class MStockOrdersApi {
         if (resp.has("data")) {
             if (resp.get("data").isJsonObject()) {
                 JsonObject data = resp.getAsJsonObject("data");
-                if (data.has("order_id")) {
-                    order.setBrokerOrderId(data.get("order_id").getAsString());
-                } else if (data.has("orderId")) {
-                    order.setBrokerOrderId(data.get("orderId").getAsString());
+                String foundOrderId = null;
+                for (java.util.Map.Entry<String, com.google.gson.JsonElement> entry : data.entrySet()) {
+                    String key = entry.getKey().toLowerCase().replace("_", "");
+                    if (key.equals("orderid")) {
+                        foundOrderId = entry.getValue().getAsString();
+                        break;
+                    }
+                }
+                if (foundOrderId != null) {
+                    order.setBrokerOrderId(foundOrderId);
                 } else {
                     order.setBrokerOrderId("UNKNOWN_" + System.currentTimeMillis());
                 }

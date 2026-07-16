@@ -26,7 +26,11 @@ public class AppStartupListener implements ServletContextListener {
             DatabaseManager.getInstance();
             log.info("✓ Database pool ready");
 
-            // 2. Start async event bus writer threads
+            // 2. Fetch today's scrip master
+            com.fnooms.util.MStockScripMasterFetcher.fetchAndStoreScripMaster();
+            log.info("✓ Scrip master loaded");
+
+            // 3. Start async event bus writer threads
             OrderEventBus.getInstance().start();
             log.info("✓ OrderEventBus started");
 
@@ -35,6 +39,10 @@ public class AppStartupListener implements ServletContextListener {
 
             TickEventBus.getInstance().start();
             log.info("✓ TickEventBus started");
+
+            // 4. Start Algo Orchestrator in background
+            com.fnooms.algo.AlgoManager.getInstance().start();
+            log.info("✓ AlgoOrchestrator started");
 
             log.info("========== FnO OMS Ready ==========");
         } catch (Exception e) {
@@ -46,6 +54,9 @@ public class AppStartupListener implements ServletContextListener {
     @Override
     public void contextDestroyed(ServletContextEvent sce) {
         log.info("========== FnO OMS Shutting Down ==========");
+        // Stop the Algo Orchestrator first so no new events are generated
+        com.fnooms.algo.AlgoManager.getInstance().stop();
+
         // Drain all queues — flush pending DB writes before Tomcat stops
         OrderEventBus.getInstance().shutdownAndDrain();
         AuditEventBus.getInstance().shutdownAndDrain();

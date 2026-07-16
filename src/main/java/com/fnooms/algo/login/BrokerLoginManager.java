@@ -29,10 +29,11 @@ public class BrokerLoginManager {
                 }
 
                 MStockLogin loginImpl = new MStockLogin();
-                String jwt = loginImpl.login(userId, password, totp, apiKey);
+                String[] tokens = loginImpl.login(userId, password, totp, apiKey);
                 
-                dao.setValue("mstock.jwt_token", jwt, "WEB_LOGIN");
-                log.info("Successfully updated mStock JWT token in database.");
+                dao.setValue("mstock.jwt_token", tokens[0], "WEB_LOGIN");
+                dao.setValue("mstock.refresh_token", tokens[1], "WEB_LOGIN");
+                log.info("Successfully updated mStock tokens in database.");
                 return true;
 
             } else if ("ANGELONE".equalsIgnoreCase(brokerType)) {

@@ -6,7 +6,11 @@
       <div class="section-title">Connectivity</div>
       <div class="section-subtitle">Test broker API reachability and latency</div>
     </div>
-    <button class="btn btn-primary" onclick="Connectivity.testAll()">⚡ Test All</button>
+    <div style="display:flex;gap:8px;">
+      <button class="btn btn-primary" onclick="Connectivity.testAll()">⚡ Test All</button>
+      <button class="btn btn-ghost" onclick="Connectivity.login('MSTOCK')">🔑 Login mStock</button>
+      <button class="btn btn-ghost" onclick="Connectivity.login('ANGELONE')">🔑 Login AngelOne</button>
+    </div>
   </div>
 
   <%-- Overall status banner --%>

@@ -62,7 +62,7 @@ public class OrderService {
 
         log.info("Order placed in {}ms: {} {} {} @ {} | brokerOrderId={}",
                 latency, request.getTransactionType(), request.getQuantity(),
-                request.getSymbol(), request.getPrice(), response.getBrokerOrderId());
+                request.getSymbol(), request.getPrice() != null ? request.getPrice() : "MARKET", response.getBrokerOrderId());
 
         return response;
     }

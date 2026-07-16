@@ -54,6 +54,28 @@ public class AuthServlet extends HttpServlet {
                 log.error("Token save failed", e);
                 JsonUtil.writeJson(resp, 500, JsonUtil.error("Failed to save token"));
             }
+        } else if ("/login".equals(path)) {
+            try {
+                String body = new String(req.getInputStream().readAllBytes());
+                JsonObject json = JsonUtil.parseObject(body);
+                String broker = json.has("broker") ? json.get("broker").getAsString() : "MSTOCK";
+                String totp = json.has("totp") ? json.get("totp").getAsString() : "";
+
+                com.fnooms.algo.login.BrokerLoginManager loginManager = new com.fnooms.algo.login.BrokerLoginManager();
+                boolean success = loginManager.performWebLogin(broker, totp);
+
+                if (success) {
+                    JsonObject result = new JsonObject();
+                    result.addProperty("message", "Login successful for " + broker);
+                    result.addProperty("broker", broker);
+                    JsonUtil.writeJson(resp, 200, JsonUtil.success(result));
+                } else {
+                    JsonUtil.writeJson(resp, 401, JsonUtil.error("Login failed for " + broker));
+                }
+            } catch (Exception e) {
+                log.error("Login endpoint error", e);
+                JsonUtil.writeJson(resp, 500, JsonUtil.error(e.getMessage()));
+            }
         } else {
             JsonUtil.writeJson(resp, 404, JsonUtil.error("Unknown auth endpoint"));
         }

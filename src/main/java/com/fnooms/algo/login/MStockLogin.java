@@ -25,7 +25,7 @@ public class MStockLogin implements BrokerLogin {
         throw new UnsupportedOperationException("Needs API Key for verifytotp");
     }
 
-    public String login(String userId, String password, String totp, String apiKey) throws Exception {
+    public String[] login(String userId, String password, String totp, String apiKey) throws Exception {
         // Step 1: Login
         String loginJson = String.format("{\"clientcode\":\"%s\",\"password\":\"%s\",\"totp\":\"\",\"state\":\"\"}", userId, password);
         RequestBody loginBody = RequestBody.create(loginJson, JSON);
@@ -37,16 +37,27 @@ public class MStockLogin implements BrokerLogin {
                 .header("Content-Type", "application/json")
                 .build();
 
+        String refreshToken = "";
         try (Response response = http.newCall(loginRequest).execute()) {
             String respStr = response.body() != null ? response.body().string() : "";
             if (!response.isSuccessful()) {
                 throw new Exception("mStock Login failed: " + response.code() + " - " + respStr);
             }
+            JsonObject loginObj = JsonParser.parseString(respStr).getAsJsonObject();
+            if (loginObj.has("data")) {
+                JsonObject dataObj = loginObj.getAsJsonObject("data");
+                if (dataObj.has("refreshToken")) {
+                    refreshToken = dataObj.get("refreshToken").getAsString();
+                }
+            }
+            if (refreshToken.isEmpty()) {
+                throw new Exception("Failed to extract refreshToken from Step 1 response: " + respStr);
+            }
             System.out.println("Login Step 1 successful.");
         }
 
         // Step 2: Verify TOTP
-        String totpJson = String.format("{\"api_key\":\"%s\",\"totp\":\"%s\"}", apiKey, totp);
+        String totpJson = String.format("{\"totp\":\"%s\",\"refreshToken\":\"%s\"}", totp, refreshToken);
         RequestBody totpBody = RequestBody.create(totpJson, JSON);
 
         Request totpRequest = new Request.Builder()
@@ -54,6 +65,7 @@ public class MStockLogin implements BrokerLogin {
                 .post(totpBody)
                 .header("X-Mirae-Version", "1")
                 .header("Content-Type", "application/json")
+                .header("X-PrivateKey", apiKey)
                 .build();
 
         try (Response response = http.newCall(totpRequest).execute()) {
@@ -66,8 +78,8 @@ public class MStockLogin implements BrokerLogin {
             JsonElement dataEl = json.get("data");
             if (dataEl != null && dataEl.isJsonObject()) {
                 JsonObject data = dataEl.getAsJsonObject();
-                if (data.has("access_token")) {
-                    return data.get("access_token").getAsString();
+                if (data.has("jwtToken")) {
+                    return new String[] { data.get("jwtToken").getAsString(), refreshToken };
                 }
             }
             throw new Exception("Could not find access token in response: " + respStr);

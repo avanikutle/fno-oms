@@ -43,6 +43,9 @@
     <a class="nav-item" data-page="watchlist" id="nav-watchlist">
       <span class="nav-icon">👁</span> Watchlist
     </a>
+    <a class="nav-item" data-page="strategies" id="nav-strategies">
+      <span class="nav-icon">⚡</span> Strategies
+    </a>
     <a class="nav-item" data-page="orders" id="nav-orders">
       <span class="nav-icon">📋</span> Orders
     </a>
@@ -75,6 +78,7 @@
     <!-- Each page is a separate JSP fragment included here -->
     <jsp:include page="pages/dashboard.jsp"/>
     <jsp:include page="pages/watchlist.jsp"/>
+    <jsp:include page="pages/strategies.jsp"/>
     <jsp:include page="pages/orders.jsp"/>
     <jsp:include page="pages/portfolio.jsp"/>
     <jsp:include page="pages/connectivity.jsp"/>
@@ -89,6 +93,7 @@
 <!-- Scripts -->
 <script src="<%= ctx %>/static/js/app.js?v=2.3"></script>
 <script src="<%= ctx %>/static/js/quotes.js"></script>
+<script src="<%= ctx %>/static/js/strategies.js"></script>
 <script src="<%= ctx %>/static/js/orders.js?v=2.3"></script>
 <script src="<%= ctx %>/static/js/portfolio.js"></script>
 <script src="<%= ctx %>/static/js/connectivity.js"></script>
@@ -105,6 +110,7 @@
       }
       // Load page-specific data on nav
       if (page === 'orders')       Orders.loadOrderBook();
+      if (page === 'strategies')   Strategies.init();
       if (page === 'portfolio')    Portfolio.load();
       if (page === 'dashboard')    Dashboard.load();
       if (page === 'connectivity') Connectivity.load();

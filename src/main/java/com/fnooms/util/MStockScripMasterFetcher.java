@@ -75,10 +75,10 @@ public class MStockScripMasterFetcher {
                     return;
                 }
 
-                String sql = "INSERT INTO mstock_scrip_master (instrument_token, exchange_token, tradingsymbol, name, last_price, expiry, strike, tick_size, lot_size, instrument_type, segment, exchange) " +
-                             "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) " +
+                String sql = "INSERT INTO mstock_scrip_master (instrument_token, instrument_name, tradingsymbol, expiry_date, strike_price, option_type, exchange_segment) " +
+                             "VALUES (?, ?, ?, ?, ?, ?, ?) " +
                              "ON CONFLICT(instrument_token) DO UPDATE SET " +
-                             "last_price=EXCLUDED.last_price, expiry=EXCLUDED.expiry, strike=EXCLUDED.strike, lot_size=EXCLUDED.lot_size;";
+                             "instrument_name=EXCLUDED.instrument_name, tradingsymbol=EXCLUDED.tradingsymbol, expiry_date=EXCLUDED.expiry_date, strike_price=EXCLUDED.strike_price, option_type=EXCLUDED.option_type, exchange_segment=EXCLUDED.exchange_segment;";
 
                 try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
                     int count = 0;
@@ -98,17 +98,12 @@ public class MStockScripMasterFetcher {
                             String tickSize = obj.has("tick_size") && !obj.get("tick_size").isJsonNull() ? obj.get("tick_size").getAsString() : "";
 
                             pstmt.setString(1, token);
-                            pstmt.setString(2, token); // Using token for exchange_token as well since we don't have a separate one
-                            pstmt.setString(3, name); // Mapping JSON 'name' to DB 'tradingsymbol' (e.g. NIFTY21JUL26...)
-                            pstmt.setString(4, symbol); // Mapping JSON 'symbol' to DB 'name' (e.g. NIFTY)
-                            pstmt.setDouble(5, 0.0); // last_price not in JSON
-                            pstmt.setString(6, expiry);
-                            pstmt.setDouble(7, parseDoubleSafely(strike));
-                            pstmt.setDouble(8, parseDoubleSafely(tickSize));
-                            pstmt.setInt(9, parseIntSafely(lotSize));
-                            pstmt.setString(10, instType);
-                            pstmt.setString(11, exchSeg);
-                            pstmt.setString(12, exchSeg); // using exch_seg as exchange
+                            pstmt.setString(2, symbol); // 'symbol' in JSON is instrument_name (e.g. NIFTY)
+                            pstmt.setString(3, name); // 'name' in JSON is tradingsymbol (e.g. NIFTY21JUL26...)
+                            pstmt.setString(4, expiry);
+                            pstmt.setDouble(5, parseDoubleSafely(strike));
+                            pstmt.setString(6, instType); // option_type
+                            pstmt.setString(7, exchSeg); // exchange_segment
 
                             pstmt.addBatch();
                             count++;

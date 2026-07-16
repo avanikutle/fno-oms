@@ -24,10 +24,11 @@ public class MStockLoginMain {
         MStockLogin mStockLogin = new MStockLogin();
         try {
             System.out.println("Attempting login...");
-            String token = mStockLogin.login(userId, password, totp, apiKey);
-            System.out.println("SUCCESS! JWT Token: " + token);
-            dao.setValue("mstock.jwt_token", token, "STANDALONE");
-            System.out.println("Token saved to DB successfully.");
+            String[] tokens = mStockLogin.login(userId, password, totp, apiKey);
+            System.out.println("SUCCESS! JWT Token: " + tokens[0]);
+            dao.setValue("mstock.jwt_token", tokens[0], "STANDALONE");
+            dao.setValue("mstock.refresh_token", tokens[1], "STANDALONE");
+            System.out.println("Tokens saved to DB successfully.");
         } catch (Exception e) {
             e.printStackTrace();
         }

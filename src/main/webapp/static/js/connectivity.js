@@ -13,6 +13,24 @@ const Connectivity = {
     this.testAll();
   },
 
+  async login(broker) {
+    const totp = prompt(`Enter TOTP for ${broker} (leave blank if none):`);
+    if (totp === null) return; // User cancelled
+
+    try {
+      Toast.info(`Logging into ${broker}...`);
+      const res = await API.post('/api/auth/login', { broker, totp });
+      if (res.success) {
+        Toast.success(res.data.message || `Login successful for ${broker}`);
+        this.testAll();
+      } else {
+        Toast.error(`Login failed: ${res.message}`);
+      }
+    } catch (e) {
+      Toast.error('Login request failed');
+    }
+  },
+
   async testAll() {
     if (this.isRefreshing) return;
     this.isRefreshing = true;

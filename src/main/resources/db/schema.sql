@@ -9,8 +9,7 @@ CREATE EXTENSION IF NOT EXISTS timescaledb;
 -- ============================================================
 -- Orders (local audit trail of all placed orders)
 -- ============================================================
-DROP TABLE IF EXISTS orders;
-CREATE TABLE orders (
+CREATE TABLE IF NOT EXISTS orders (
     id                  SERIAL PRIMARY KEY,
     business_date       DATE         NOT NULL DEFAULT CURRENT_DATE,
     order_source        VARCHAR(50)  NOT NULL DEFAULT 'ALGO', -- ALGO, BROKER_WEB
@@ -85,8 +84,7 @@ CREATE OR REPLACE TRIGGER trg_audit_log_updated_at
 -- Quote Ticks (TimescaleDB hypertable — high-frequency time-series)
 -- Used to persist live quote snapshots from broker polling
 -- ============================================================
-DROP TABLE IF EXISTS quote_ticks CASCADE;
-CREATE TABLE quote_ticks (
+CREATE TABLE IF NOT EXISTS quote_ticks (
     time            TIMESTAMPTZ  NOT NULL,
     symbol          VARCHAR(100) NOT NULL,
     exchange        VARCHAR(20)  NOT NULL,
@@ -161,8 +159,7 @@ ON CONFLICT (key_name) DO NOTHING;
 -- ============================================================
 -- Scrip Master (Instruments)
 -- ============================================================
-DROP TABLE IF EXISTS scrip_master CASCADE;
-CREATE TABLE scrip_master (
+CREATE TABLE IF NOT EXISTS scrip_master (
     token VARCHAR(50) PRIMARY KEY,
     symbol VARCHAR(100) NOT NULL,
     name VARCHAR(100),
@@ -184,8 +181,7 @@ CREATE OR REPLACE TRIGGER trg_scrip_master_updated_at
 -- ============================================================
 -- Order Details
 -- ============================================================
-DROP TABLE IF EXISTS order_details CASCADE;
-CREATE TABLE order_details (
+CREATE TABLE IF NOT EXISTS order_details (
     id SERIAL PRIMARY KEY,
     business_date DATE NOT NULL DEFAULT CURRENT_DATE,
     order_source VARCHAR(50) NOT NULL DEFAULT 'ALGO', -- ALGO, BROKER_WEB
@@ -205,8 +201,7 @@ CREATE OR REPLACE TRIGGER trg_order_details_updated_at
 -- ============================================================
 -- Strategies Configuration
 -- ============================================================
-DROP TABLE IF EXISTS strategies CASCADE;
-CREATE TABLE strategies (
+CREATE TABLE IF NOT EXISTS strategies (
     id SERIAL PRIMARY KEY,
     scrip_name VARCHAR(100) NOT NULL,
     exchange_id VARCHAR(20) DEFAULT 'NFO',
@@ -232,11 +227,10 @@ CREATE OR REPLACE TRIGGER trg_strategies_updated_at
 -- ============================================================
 -- mStock Scrip Master
 -- ============================================================
-DROP TABLE IF EXISTS mstock_scrip_master CASCADE;
-CREATE TABLE mstock_scrip_master (
+CREATE TABLE IF NOT EXISTS mstock_scrip_master (
     id SERIAL PRIMARY KEY,
     msg_code VARCHAR(10),
-    instrument_token VARCHAR(50) NOT NULL,
+    instrument_token VARCHAR(50) NOT NULL UNIQUE,
     instrument_name VARCHAR(100),
     tradingsymbol VARCHAR(100) NOT NULL,
     expiry_date VARCHAR(50),

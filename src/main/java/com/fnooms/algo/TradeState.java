@@ -4,10 +4,28 @@ public class TradeState {
     private boolean isEntered = false;
     private boolean isExited = false;
     private double currentStopLoss = 0.0;
+    private double entryPrice = 0.0;
+    private double currentTarget = 0.0;
     
     private String entryOrderId;
     private String exitOrderId;
     private int entryAttempts = 0;
+
+    public double getEntryPrice() {
+        return entryPrice;
+    }
+
+    public void setEntryPrice(double entryPrice) {
+        this.entryPrice = entryPrice;
+    }
+
+    public double getCurrentTarget() {
+        return currentTarget;
+    }
+
+    public void setCurrentTarget(double currentTarget) {
+        this.currentTarget = currentTarget;
+    }
 
     public int getEntryAttempts() {
         return entryAttempts;

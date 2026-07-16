@@ -12,16 +12,16 @@ public class MockServerMain {
 
     public static void main(String[] args) {
         log.info("Starting Mock Data Publisher Server...");
-        
+
         List<StrategyConfig> configs = StrategyConfigLoader.loadConfigs();
-        
-        int port = 8081;
+
+        int port = 8082;
         MockDataPublisherServer server = new MockDataPublisherServer(port, configs);
-        
+
         server.start();
-        
+
         log.info("Mock WebSocket Server is listening on ws://localhost:{}", port);
-        
+
         // Add shutdown hook
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             try {

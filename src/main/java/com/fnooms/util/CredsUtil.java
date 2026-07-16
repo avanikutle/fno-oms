@@ -15,6 +15,15 @@ public class CredsUtil {
     }
 
     public static String getWsCreds() {
+        // Check if the mock WebSocket is explicitly enabled
+        String isMockEnabled = dao.getValue("mock.mstock.ws.url.enabled");
+        if ("true".equalsIgnoreCase(isMockEnabled)) {
+            String customUrl = dao.getValue("mock.mstock.ws.url");
+            if (customUrl != null && !customUrl.trim().isEmpty()) {
+                return customUrl;
+            }
+        }
+
         String API_KEY = getMStockApiKey();
         String ACCESS_TOKEN = getMStockJwtToken();
         WS_URL = "wss://ws.mstock.trade?API_KEY=" + API_KEY + "&ACCESS_TOKEN=" + ACCESS_TOKEN;

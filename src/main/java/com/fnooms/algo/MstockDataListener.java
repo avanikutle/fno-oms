@@ -86,7 +86,8 @@ public class MstockDataListener implements MarketDataListener {
                     @Override
                     public void onOpen(WebSocket webSocket) {
                         currentWebSocket = webSocket;
-                        log.info("MStock WebSocket Connected");
+                        log.info("MStock WebSocket Connected to {}", ws_url);
+                        printBanner(ws_url);
                         webSocket.request(1);
 
                         // Send login message to maintain session
@@ -156,6 +157,37 @@ public class MstockDataListener implements MarketDataListener {
             Thread.currentThread().join();
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
+        }
+    }
+    private void printBanner(String url) {
+        if (url != null && (url.contains("localhost") || url.contains("127.0.0.1"))) {
+            System.out.println(
+                "\n" +
+                "========================================================================\n" +
+                "  __  __   ____    _____   _  __     __  __    ____    _____   ______ \n" +
+                " |  \\/  | / __ \\  / ____| | |/ /    |  \\/  |  / __ \\  |  __ \\ |  ____|\n" +
+                " | \\  / || |  | || |      | ' /     | \\  / | | |  | | | |  | || |__   \n" +
+                " | |\\/| || |  | || |      |  <      | |\\/| | | |  | | | |  | ||  __|  \n" +
+                " | |  | || |__| || |____  | . \\     | |  | | | |__| | | |__| || |____ \n" +
+                " |_|  |_| \\____/  \\_____| |_|\\_\\    |_|  |_|  \\____/  |_____/ |______|\n" +
+                "                                                                      \n" +
+                "             ::: CONNECTED TO LOCAL MOCK SERVER :::                   \n" +
+                "========================================================================\n"
+            );
+        } else {
+            System.out.println(
+                "\n" +
+                "========================================================================\n" +
+                "  _        _____  __      __  ______     __  __   _____  _______  _  __\n" +
+                " | |      |_   _| \\ \\    / / |  ____|   |  \\/  | / ____||__   __|| |/ /\n" +
+                " | |        | |    \\ \\  / /  | |__      | \\  / || (___     | |   | ' / \n" +
+                " | |        | |     \\ \\/ /   |  __|     | |\\/| | \\___ \\    | |   |  <  \n" +
+                " | |____   _| |_     \\  /    | |____    | |  | | ____) |   | |   | . \\ \n" +
+                " |______| |_____|     \\/     |______|   |_|  |_||_____/    |_|   |_|\\_\\\n" +
+                "                                                                      \n" +
+                "               ::: CONNECTED TO LIVE BROKER :::                       \n" +
+                "========================================================================\n"
+            );
         }
     }
 }

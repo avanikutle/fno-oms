@@ -6,7 +6,9 @@ public class ResetState {
     public static void main(String[] args) {
         AlgoKeyValueDAO dao = new AlgoKeyValueDAO();
         // Set the state back to fully un-entered/exited
-        dao.setValue("tradestate.NIFTY21JUL2624200CE", "{\"isEntered\":false,\"isExited\":false,\"currentStopLoss\":0.0,\"entryAttempts\":0}", "SYSTEM");
-        System.out.println("Trade state successfully reset.");
+        String symbol = "NIFTY2672124000PE"; // Change this symbol to the one you want to reset
+        dao.setValue("state." + symbol + ".entered", "false", "SYSTEM");
+        dao.setValue("state." + symbol + ".exited", "false", "SYSTEM");
+        System.out.println("Trade state successfully reset for " + symbol);
     }
 }

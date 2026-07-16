@@ -1,0 +1,98 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "java",
+            "name": "MockServerMain",
+            "request": "launch",
+            "mainClass": "com.fnooms.mock.MockServerMain",
+            "projectName": "fno-oms"
+        },
+        {
+            "type": "java",
+            "name": "Current File",
+            "request": "launch",
+            "mainClass": "${file}"
+        },
+        {
+            "type": "java",
+            "name": "AlgoOrchestratorMain",
+            "request": "launch",
+            "mainClass": "com.fnooms.algo.AlgoOrchestratorMain",
+            "projectName": "fno-oms"
+        },
+        {
+            "type": "java",
+            "name": "AngelOneLoginMain",
+            "request": "launch",
+            "mainClass": "com.fnooms.algo.login.AngelOneLoginMain",
+            "projectName": "fno-oms"
+        },
+        {
+            "type": "java",
+            "name": "MStockLoginMain",
+            "request": "launch",
+            "mainClass": "com.fnooms.algo.login.MStockLoginMain",
+            "projectName": "fno-oms"
+        },
+        {
+            "type": "java",
+            "name": "AngelOneAuth",
+            "request": "launch",
+            "mainClass": "com.fnooms.util.AngelOneAuth",
+            "projectName": "fno-oms"
+        },
+        {
+            "type": "java",
+            "name": "AngelOneScripMasterFetcher",
+            "request": "launch",
+            "mainClass": "com.fnooms.util.AngelOneScripMasterFetcher",
+            "projectName": "fno-oms"
+        },
+        {
+            "type": "java",
+            "name": "AngeloneReconnectWs",
+            "request": "launch",
+            "mainClass": "com.fnooms.util.AngeloneReconnectWs",
+            "projectName": "fno-oms"
+        },
+        {
+            "type": "java",
+            "name": "MStockApiTester",
+            "request": "launch",
+            "mainClass": "com.fnooms.util.MStockApiTester",
+            "projectName": "fno-oms"
+        },
+        {
+            "type": "java",
+            "name": "MigrateDb",
+            "request": "launch",
+            "mainClass": "com.fnooms.util.MigrateDb",
+            "projectName": "fno-oms"
+        },
+        {
+            "type": "java",
+            "name": "MstockReconnectWs",
+            "request": "launch",
+            "mainClass": "com.fnooms.util.MstockReconnectWs",
+            "projectName": "fno-oms"
+        },
+        {
+            "type": "java",
+            "name": "ResetState",
+            "request": "launch",
+            "mainClass": "com.fnooms.util.ResetState",
+            "projectName": "fno-oms"
+        },
+        {
+            "type": "java",
+            "name": "SSTest",
+            "request": "launch",
+            "mainClass": "com.fnooms.util.SSTest",
+            "projectName": "fno-oms"
+        }
+    ]
+}

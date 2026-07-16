@@ -124,4 +124,27 @@ public class ScripMasterService {
     public static String getSymbol(String token) {
         return tokenToSymbolMap.get(token);
     }
+
+    public static List<Map<String, String>> searchOptions(String query) {
+        List<Map<String, String>> results = new ArrayList<>();
+        if (query == null || query.trim().isEmpty()) {
+            return results;
+        }
+        String sql = "SELECT tradingsymbol, instrument_token FROM mstock_scrip_master WHERE tradingsymbol ILIKE ? LIMIT 50";
+        try (Connection conn = DatabaseManager.getInstance().getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, "%" + query.trim() + "%");
+            try (ResultSet rs = pstmt.executeQuery()) {
+                while (rs.next()) {
+                    Map<String, String> map = new ConcurrentHashMap<>();
+                    map.put("symbol", rs.getString("tradingsymbol"));
+                    map.put("token", rs.getString("instrument_token"));
+                    results.add(map);
+                }
+            }
+        } catch (Exception e) {
+            log.error("Error searching options: ", e);
+        }
+        return results;
+    }
 }

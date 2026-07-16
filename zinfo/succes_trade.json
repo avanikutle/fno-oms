@@ -1,0 +1,38 @@
+//Option Trade
+{
+    "variety": "NORMAL",
+    "tradingsymbol": "NIFTY2672124200CE",
+    "symboltoken": "57348",
+    "exchange": "NFO",
+    "transactiontype": "BUY",
+    "ordertype": "MARKET",
+    "producttype": "CARRYFORWARD",
+    "quantity": "65",
+    "duration": "DAY",
+    "price": "0",
+    "triggerprice": "0",
+    "squareoff": "0",
+    "stoploss": "0",
+    "trailingStopLoss": "0",
+    "disclosedquantity": "0",
+    "ordertag": ""
+}
+//Equity trade
+{
+    "variety": "NORMAL",
+    "tradingsymbol": "INFY-EQ",
+    "symboltoken": "1594",
+    "exchange": "NSE",
+    "transactiontype": "BUY",
+    "ordertype": "MARKET",
+    "producttype": "DELIVERY",
+    "quantity": "1",
+    "duration": "DAY",
+    "price": "0",
+    "triggerprice": "0",
+    "squareoff": "0",
+    "stoploss": "0",
+    "trailingStopLoss": "",
+    "disclosedquantity": "",
+    "ordertag": ""
+}
