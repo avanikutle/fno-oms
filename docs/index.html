@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FnO OMS - Mock Server & DB Documentation</title>
+    <style>
+        :root {
+            --primary-color: #2563eb;
+            --sidebar-bg: #f8fafc;
+            --text-color: #1e293b;
+            --code-bg: #1e1e1e;
+            --border-color: #e2e8f0;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: var(--text-color);
+            margin: 0;
+            padding: 0;
+            display: flex;
+        }
+
+        .sidebar {
+            width: 250px;
+            background: var(--sidebar-bg);
+            border-right: 1px solid var(--border-color);
+            height: 100vh;
+            position: fixed;
+            padding: 2rem 1rem;
+            overflow-y: auto;
+        }
+
+        .sidebar h2 {
+            font-size: 1.2rem;
+            color: var(--primary-color);
+            margin-bottom: 1.5rem;
+        }
+
+        .sidebar ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .sidebar li {
+            margin-bottom: 0.8rem;
+        }
+
+        .sidebar a {
+            text-decoration: none;
+            color: var(--text-color);
+            font-weight: 500;
+            transition: color 0.2s;
+        }
+
+        .sidebar a:hover {
+            color: var(--primary-color);
+        }
+
+        .content {
+            margin-left: 280px;
+            padding: 3rem;
+            max-width: 900px;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            border-bottom: 2px solid var(--border-color);
+            padding-bottom: 0.5rem;
+            margin-bottom: 2rem;
+        }
+
+        h2 {
+            font-size: 1.8rem;
+            margin-top: 3rem;
+            color: #334155;
+        }
+
+        h3 {
+            font-size: 1.3rem;
+            color: #475569;
+        }
+
+        code {
+            background: #f1f5f9;
+            padding: 0.2rem 0.4rem;
+            border-radius: 4px;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 0.9em;
+        }
+
+        pre {
+            background: var(--code-bg);
+            color: #d4d4d4;
+            padding: 1.5rem;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 1.5rem 0;
+        }
+
+        pre code {
+            background: transparent;
+            color: inherit;
+            padding: 0;
+        }
+
+        .alert {
+            background: #eff6ff;
+            border-left: 4px solid var(--primary-color);
+            padding: 1rem 1.5rem;
+            border-radius: 4px;
+            margin: 1.5rem 0;
+        }
+
+        .alert-warning {
+            background: #fffbeb;
+            border-left-color: #f59e0b;
+        }
+        
+        .alert-success {
+            background: #f0fdf4;
+            border-left-color: #22c55e;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="sidebar">
+        <h2>FnO OMS Docs</h2>
+        <ul>
+            <li><a href="#overview">Overview</a></li>
+            <li><a href="#database">Database Schema Changes</a></li>
+            <li><a href="#java-daos">Java DAOs & Services</a></li>
+            <li><a href="#mock-server">Standalone Mock Server</a></li>
+            <li><a href="#how-to">How To: Setup & Test</a></li>
+        </ul>
+    </div>
+
+    <div class="content">
+        <h1>Mock Data Server and DB Refactor</h1>
+        
+        <div class="alert">
+            <strong>Documentation Date:</strong> July 2026<br>
+            <strong>Scope:</strong> Mock Websocket framework implementation and Order Database Normalization.
+        </div>
+
+        <section id="overview">
+            <h2>Overview</h2>
+            <p>The system has been successfully upgraded to support a <strong>fully offline, synthetic binary data feed</strong> that perfectly mimics the MStock websockets. Additionally, the core Order tables have been refactored to treat every order leg (BUY/SELL) independently with strict auditing capabilities.</p>
+        </section>
+
+        <section id="database">
+            <h2>1. Database Schema Overhaul</h2>
+            <ul>
+                <li><strong>Dropped and recreated</strong> <code>orders</code> and <code>order_details</code> tables to support the new normalized structure.</li>
+                <li><strong>Added <code>business_date</code></strong>: Inserted as the first column, defaulting to <code>CURRENT_DATE</code> across both tables.</li>
+                <li><strong>Added <code>order_source</code></strong>: New column inserted to distinguish manual vs ALGO broker orders (e.g., <code>'ALGO'</code>, <code>'BROKER_WEB'</code>).</li>
+                <li><strong>Decoupled Legs</strong>: Refactored <code>order_details</code> to decouple BUY and SELL legs. Every leg is now inserted as an independent row with its own <code>transaction_type</code>. Columns like <code>exit_order_id</code> and <code>pnl</code> have been removed from the schema.</li>
+                <li><strong>Audit Triggers</strong>: Appended <code>updated_at</code> and <code>updated_by</code> columns with automatic PostgreSQL triggers to all major tables: <code>orders</code>, <code>order_details</code>, <code>mstock_scrip_master</code>, <code>scrip_master</code>, <code>quote_ticks</code>, and <code>strategies</code>.</li>
+            </ul>
+        </section>
+
+        <section id="java-daos">
+            <h2>2. Java DAOs and Services Adapted</h2>
+            <ul>
+                <li><code>OrderDetailsDAO.java</code> was fundamentally modified. It no longer maps open and exit legs into a single row. Instead, methods like <code>insertEntry</code> and <code>updateExit</code> now insert standalone, distinct rows for every order execution.</li>
+                <li>The primary <code>Order</code> domain entity was updated to supply <code>orderSource = "ALGO"</code>. This routes correctly into the refactored schema via <code>OrderDAO.java</code>.</li>
+            </ul>
+        </section>
+
+        <section id="mock-server">
+            <h2>3. Standalone WebSocket Mock Server</h2>
+            <p>A new robust, standalone Mock WebSocket Publisher has been built.</p>
+            <ul>
+                <li>Integrated the lightweight <code>Java-WebSocket</code> dependency via <code>pom.xml</code>.</li>
+                <li>Developed <code>MockDataPublisherServer.java</code> on port <code>8081</code> to construct and batch encode Mock little-endian binary packets. This perfectly simulates live MStock data streams.</li>
+                <li>Built a standalone launcher <code>MockServerMain.java</code> which operates completely independently of Tomcat.</li>
+                <li><strong>Binary Parsers Abstracted</strong>: Abstracted binary MStock parsing and JSON AngelOne parsing logic out of the listeners into a unified utility: <code>BinaryParserUtil.java</code>.</li>
+                <li><strong>Seamless Switch</strong>: <code>MstockDataListener</code> was left completely untouched. To utilize the mock setup, you simply modify the websocket URL credential, prompting the current listener logic to flawlessly switch targets to the local mock stream!</li>
+            </ul>
+        </section>
+
+        <section id="how-to">
+            <h2>4. How To: Setup & Test</h2>
+            
+            <h3>Step 1: Start the Mock Server</h3>
+            <p>Since the Mock Server is a completely standalone application, you can start it separately from the main Tomcat instance.</p>
+            <p>Run the <code>main</code> method inside:</p>
+            <pre><code>src/main/java/com/fnooms/mock/MockServerMain.java</code></pre>
+            <p>You should see logs indicating:</p>
+            <pre><code>[main] INFO MockServerMain - Mock WebSocket Server is listening on ws://localhost:8081</code></pre>
+
+            <h3>Step 2: Update Application Credentials</h3>
+            <p>You need to tell the Tomcat application to connect to the mock server instead of the live MStock server. Update the websocket URL inside your database:</p>
+            <pre><code class="language-sql">UPDATE algo_key_value 
+SET key_value = 'ws://localhost:8081' 
+WHERE key_name = 'creds.mstock.ws.url';</code></pre>
+
+            <h3>Step 3: Update Feed Broker</h3>
+            <p>Ensure that the application is configured to use the MStock feed (which will now route to your mock server).</p>
+            <pre><code class="language-sql">UPDATE algo_key_value 
+SET key_value = 'MSTOCK' 
+WHERE key_name = 'algo.feedBroker';</code></pre>
+
+            <h3>Step 4: Start the Main Application</h3>
+            <p>Start your Tomcat server (or run Cargo). The <code>MstockDataListener</code> will boot up, read the <code>ws://localhost:8081</code> URL from the DB, and connect to your standalone Mock Server.</p>
+            <pre><code>mvn cargo:run -DskipTests</code></pre>
+
+            <div class="alert alert-success">
+                <strong>Success!</strong> You will now see mock binary packets being ingested, decoded by <code>BinaryParserUtil</code>, and triggering strategies within your logs—entirely offline!
+            </div>
+        </section>
+        
+        <br><br><br>
+    </div>
+
+</body>
+</html>
