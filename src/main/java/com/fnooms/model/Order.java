@@ -28,8 +28,13 @@ public class Order {
     private Instant   exchangeTimestamp;
     private Instant   placedAt;
     private Instant   updatedAt;
+    private String    orderSource = "ALGO";
 
     public Order() {}
+
+    // ---- Getters & Setters ----
+    public String    getOrderSource()               { return orderSource; }
+    public void      setOrderSource(String v)       { this.orderSource = v; }
 
     // ---- Getters & Setters ----
     public Long      getId()                        { return id; }

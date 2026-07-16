@@ -10,6 +10,9 @@ import java.util.List;
 public class AlgoOrchestrator {
     private static final Logger log = LoggerFactory.getLogger(AlgoOrchestrator.class);
 
+    private MarketDataListener listener;
+    private StrategyEngine engine;
+
     public void start() {
         log.info("Starting Algo Orchestrator...");
 
@@ -34,22 +37,15 @@ public class AlgoOrchestrator {
         // 2. Load Configurations (Symbol level strategies from properties)
         List<StrategyConfig> configs = StrategyConfigLoader.loadConfigs();
 
-        if (configs.isEmpty()) {
-            log.error("No active strategies found in strategy.properties.");
-            return;
-        }
-
         OrderService orderService = new OrderService();
 
         // 3. Initialize Strategy Engine with target order broker
-        StrategyEngine engine = new StrategyEngine(orderService, kvDao);
+        engine = new StrategyEngine(orderService, kvDao);
         for (StrategyConfig config : configs) {
             engine.addConfig(config);
         }
 
         // 4. Spawn the respective Market Data Listener based on feedBroker
-        MarketDataListener listener = null;
-
         if ("ANGELONE".equalsIgnoreCase(feedBroker)) {
             listener = new AngelOneDataListener(engine, configs);
         } else if ("MSTOCK".equalsIgnoreCase(feedBroker)) {
@@ -62,5 +58,19 @@ public class AlgoOrchestrator {
         // Start listening (this will block the main thread, or we can run in a new
         // Thread if we add more listeners)
         listener.start();
+    }
+
+    public void stop() {
+        if (listener != null) {
+            listener.stop();
+        }
+    }
+
+    public StrategyEngine getEngine() {
+        return engine;
+    }
+
+    public MarketDataListener getListener() {
+        return listener;
     }
 }

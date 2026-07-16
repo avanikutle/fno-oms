@@ -15,34 +15,35 @@ public class OrderDAO {
     public void insert(Order o) {
         String sql = """
                 INSERT INTO orders
-                  (broker_order_id, broker_type, symbol, exchange,
+                  (business_date, order_source, broker_order_id, broker_type, symbol, exchange,
                    transaction_type, order_type, product, quantity, price,
                    trigger_price, validity, status, status_message,
                    filled_quantity, average_price, exchange_order_id,
                    exchange_timestamp, placed_at, updated_at)
-                VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,NOW())
+                VALUES (CURRENT_DATE,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,NOW())
                 """;
         try (Connection c = DatabaseManager.getInstance().getConnection();
              PreparedStatement ps = c.prepareStatement(sql)) {
-            ps.setString(1,  o.getBrokerOrderId());
-            ps.setString(2,  o.getBrokerType());
-            ps.setString(3,  o.getSymbol());
-            ps.setString(4,  o.getExchange());
-            ps.setString(5,  o.getTransactionType());
-            ps.setString(6,  o.getOrderType());
-            ps.setString(7,  o.getProduct());
-            ps.setInt(8,     o.getQuantity());
-            ps.setBigDecimal(9, o.getPrice());
-            ps.setBigDecimal(10, o.getTriggerPrice());
-            ps.setString(11, o.getValidity());
-            ps.setString(12, o.getStatus());
-            ps.setString(13, o.getStatusMessage());
-            ps.setInt(14,    o.getFilledQuantity());
-            ps.setBigDecimal(15, o.getAveragePrice());
-            ps.setString(16, o.getExchangeOrderId());
-            ps.setTimestamp(17, o.getExchangeTimestamp() != null
+            ps.setString(1,  o.getOrderSource());
+            ps.setString(2,  o.getBrokerOrderId());
+            ps.setString(3,  o.getBrokerType());
+            ps.setString(4,  o.getSymbol());
+            ps.setString(5,  o.getExchange());
+            ps.setString(6,  o.getTransactionType());
+            ps.setString(7,  o.getOrderType());
+            ps.setString(8,  o.getProduct());
+            ps.setInt(9,     o.getQuantity());
+            ps.setBigDecimal(10, o.getPrice());
+            ps.setBigDecimal(11, o.getTriggerPrice());
+            ps.setString(12, o.getValidity());
+            ps.setString(13, o.getStatus());
+            ps.setString(14, o.getStatusMessage());
+            ps.setInt(15,    o.getFilledQuantity());
+            ps.setBigDecimal(16, o.getAveragePrice());
+            ps.setString(17, o.getExchangeOrderId());
+            ps.setTimestamp(18, o.getExchangeTimestamp() != null
                     ? Timestamp.from(o.getExchangeTimestamp()) : null);
-            ps.setTimestamp(18, o.getPlacedAt() != null
+            ps.setTimestamp(19, o.getPlacedAt() != null
                     ? Timestamp.from(o.getPlacedAt()) : null);
             ps.executeUpdate();
         } catch (SQLException e) {

@@ -20,10 +20,36 @@ public class MstockDataListener implements MarketDataListener {
 
     private final StrategyEngine engine;
     private final List<StrategyConfig> configs;
+    private volatile boolean running = true;
+    private volatile WebSocket currentWebSocket;
 
     public MstockDataListener(StrategyEngine engine, List<StrategyConfig> configs) {
         this.engine = engine;
         this.configs = configs;
+    }
+
+    @Override
+    public void stop() {
+        running = false;
+        if (currentWebSocket != null) {
+            currentWebSocket.abort(); // or sendClose
+        }
+        log.info("MstockDataListener stopped.");
+    }
+
+    @Override
+    public void addSubscription(String symbol) {
+        String token = ScripMasterService.getToken(symbol);
+        if (token != null && currentWebSocket != null) {
+            String subscribeMsg = String.format(
+                    "{\"correlationID\":\"sub_dyn\",\"action\":1,\"params\":{\"mode\":3,\"tokenList\":[{\"exchangeType\":2,\"tokens\":[\"%s\"]}]}}",
+                    token);
+            log.info("Dynamically subscribing on MStock: {}", subscribeMsg);
+            currentWebSocket.sendText(subscribeMsg, true);
+        } else {
+            log.warn("Cannot subscribe to {}. Token: {}, WebSocket: {}", symbol, token,
+                    currentWebSocket != null ? "connected" : "null");
+        }
     }
 
     @Override
@@ -34,7 +60,7 @@ public class MstockDataListener implements MarketDataListener {
         }
 
         int count = 0;
-        while (true) {
+        while (running) {
             try {
                 log.info("Connecting MStock WS. Iteration count {}", count++);
                 connectAndListen();
@@ -59,6 +85,7 @@ public class MstockDataListener implements MarketDataListener {
                 .buildAsync(URI.create(ws_url), new WebSocket.Listener() {
                     @Override
                     public void onOpen(WebSocket webSocket) {
+                        currentWebSocket = webSocket;
                         log.info("MStock WebSocket Connected");
                         webSocket.request(1);
 
@@ -71,41 +98,31 @@ public class MstockDataListener implements MarketDataListener {
                                 .filter(t -> t != null)
                                 .collect(Collectors.toList());
 
+                        // Add watchlist tokens
+                        com.fnooms.dao.AlgoKeyValueDAO dao = new com.fnooms.dao.AlgoKeyValueDAO();
+                        String watchlist = dao.getValue("algo.strategy.watchlist");
+                        if (watchlist != null && !watchlist.isEmpty()) {
+                            for (String sym : watchlist.split(",")) {
+                                String t = ScripMasterService.getToken(sym.trim());
+                                if (t != null && !tokens.contains(t)) {
+                                    tokens.add(t);
+                                }
+                            }
+                        }
+
                         if (!tokens.isEmpty()) {
-                            String tokenArrayStr = String.join(",", tokens);
-                            String subscribeMsg = String.format("{\"a\": \"subscribe\", \"v\": [%s]}", tokenArrayStr);
+                            String tokenArrayStr = tokens.stream().map(t -> "\"" + t + "\"")
+                                    .collect(Collectors.joining(","));
+                            String subscribeMsg = String.format(
+                                    "{\"correlationID\":\"sub_init\",\"action\":1,\"params\":{\"mode\":3,\"tokenList\":[{\"exchangeType\":2,\"tokens\":[%s]}]}}",
+                                    tokenArrayStr);
                             log.info("Subscribing on MStock: {}", subscribeMsg);
                             webSocket.sendText(subscribeMsg, true);
                         }
                     }
 
                     private void parseMarketData(ByteBuffer data) {
-                        data.order(ByteOrder.BIG_ENDIAN);
-                        int length = data.remaining();
-                        if (length < 8) return; 
-
-                        short packetCount = data.getShort();
-                        short packetLength = data.getShort();
-
-                        for (int i = 0; i < packetCount; i++) {
-                            if (data.remaining() < 4) break;
-
-                            int token = data.getInt();
-                            int rawLtp = data.getInt();
-                            double ltp = rawLtp / 100.0;
-
-                            // Resolve symbol from token using ScripMaster
-                            String symbol = ScripMasterService.getSymbol(String.valueOf(token));
-                            if (symbol != null) {
-                                // Feed the price to the Strategy Engine
-                                engine.onPriceUpdate(symbol, ltp);
-                            }
-
-                            int remainingPacketBytes = packetLength - 8; 
-                            if (remainingPacketBytes > 0 && data.remaining() >= remainingPacketBytes) {
-                                data.position(data.position() + remainingPacketBytes);
-                            }
-                        }
+                        BinaryParserUtil.parseMStockMarketData(data, engine);
                     }
 
                     @Override
@@ -117,6 +134,7 @@ public class MstockDataListener implements MarketDataListener {
 
                     @Override
                     public CompletionStage<?> onBinary(WebSocket webSocket, java.nio.ByteBuffer data, boolean last) {
+                        log.debug("Binary msg received");
                         parseMarketData(data);
                         webSocket.request(1);
                         return null;

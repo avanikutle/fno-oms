@@ -1,0 +1,32 @@
+package com.fnooms.dao;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
+
+public class OrderDetailsDAO {
+    private static final Logger log = LoggerFactory.getLogger(OrderDetailsDAO.class);
+
+    public void insertEntry(String symbol, String orderId, String transactionType, double price) {
+        String sql = "INSERT INTO order_details (business_date, order_source, transaction_type, symbol, order_id, price, order_time, updated_by, updated_at) " +
+                     "VALUES (CURRENT_DATE, 'ALGO', ?, ?, ?, ?, NOW(), 'SYSTEM', NOW())";
+        try (Connection conn = DatabaseManager.getInstance().getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, transactionType);
+            pstmt.setString(2, symbol);
+            pstmt.setString(3, orderId);
+            pstmt.setDouble(4, price);
+            pstmt.executeUpdate();
+            log.info("Inserted {} order for {} into order_details (orderId={})", transactionType, symbol, orderId);
+        } catch (SQLException e) {
+            log.error("Failed to insert into order_details for symbol {}: {}", symbol, e.getMessage());
+        }
+    }
+
+    public void updateExit(String symbol, String entryOrderId, String exitOrderId, double exitPrice) {
+        insertEntry(symbol, exitOrderId, "SELL", exitPrice);
+    }
+}
