@@ -105,11 +105,24 @@ public class StrategyEngine {
                 exitReason = "STOP LOSS HIT";
             } else if (config.getTrailingSlPoints() > 0) {
                 // Trailing Stop Loss Logic (Assuming long position)
-                // If price moves up favorably, move SL up.
-                double newSl = currentPrice - config.getTrailingSlPoints();
-                if (newSl > state.getCurrentStopLoss()) {
-                    state.setCurrentStopLoss(newSl);
-                    log.info("Trailing SL for {} updated to {}", symbol, newSl);
+                // 1. SL should only trail once price >= entryPrice + trailingSlPoints
+                if (currentPrice >= state.getEntryPrice() + config.getTrailingSlPoints()) {
+                    double newSl;
+                    String trailMode = kvDao.getValue("algo.trailing.sl.mode"); // "step" or "continuous"
+                    
+                    if ("step".equalsIgnoreCase(trailMode)) {
+                        int steps = (int) Math.floor((currentPrice - state.getEntryPrice()) / config.getTrailingSlPoints());
+                        // Place SL at entryPrice initially, then step it up by trailingSlPoints
+                        newSl = state.getEntryPrice() + (steps - 1) * config.getTrailingSlPoints();
+                    } else {
+                        // Strict continuous trailing by the difference
+                        newSl = currentPrice - config.getTrailingSlPoints();
+                    }
+                    
+                    if (newSl > state.getCurrentStopLoss()) {
+                        state.setCurrentStopLoss(newSl);
+                        log.info("Trailing SL for {} updated to {}", symbol, newSl);
+                    }
                 }
             }
 
@@ -140,9 +153,8 @@ public class StrategyEngine {
                 kvDao.setValue("state." + config.getSymbol() + ".entryPrice", String.valueOf(state.getEntryPrice()), "SYSTEM");
                 kvDao.setValue("state." + config.getSymbol() + ".currentTarget", String.valueOf(state.getCurrentTarget()), "SYSTEM");
                 
-                // Trailing stop loss base starts from entry price
-                double initialSl = state.getEntryPrice() - config.getTrailingSlPoints();
-                state.setCurrentStopLoss(initialSl);
+                // Initial SL is strictly the configured stop loss until trailing kicks in
+                state.setCurrentStopLoss(config.getStopLossPrice());
                 
                 // Insert to order_details
                 orderDetailsDao.insertEntry(config.getSymbol(), response.getBrokerOrderId(), config.getTransactionType(), state.getEntryPrice());
