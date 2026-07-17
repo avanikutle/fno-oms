@@ -15,6 +15,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.concurrent.*;
 
 /**
@@ -27,17 +28,36 @@ public class ConnectivityServlet extends HttpServlet {
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
-        // For now, only test MSTOCK
-        ExecutorService pool = Executors.newSingleThreadExecutor();
+        String brokerListStr = dao.getValue("web.broker.list");
+        if (brokerListStr == null || brokerListStr.trim().isEmpty()) {
+            brokerListStr = "MSTOCK"; // fallback
+        }
+        
+        String activeType = dao.getValue("algo.activeBroker");
+        if (activeType == null) {
+            activeType = "MSTOCK";
+        }
+        final String finalActiveType = activeType;
+
+        String[] brokers = brokerListStr.split("\\|");
+
+        ExecutorService pool = Executors.newFixedThreadPool(Math.max(1, brokers.length));
         try {
-            Future<JsonObject> future = pool.submit(() -> testSingle("MSTOCK"));
             JsonArray results = new JsonArray();
-            try {
-                results.add(future.get(15, TimeUnit.SECONDS));
-            } catch (Exception e) {
-                JsonObject err = new JsonObject();
-                err.addProperty("error", "Test timed out");
-                results.add(err);
+            List<Future<JsonObject>> futures = new java.util.ArrayList<>();
+            for (String broker : brokers) {
+                futures.add(pool.submit(() -> testSingle(broker.trim(), finalActiveType)));
+            }
+
+            for (int i = 0; i < futures.size(); i++) {
+                try {
+                    results.add(futures.get(i).get(15, TimeUnit.SECONDS));
+                } catch (Exception e) {
+                    JsonObject err = new JsonObject();
+                    err.addProperty("brokerType", brokers[i].trim());
+                    err.addProperty("error", "Test timed out");
+                    results.add(err);
+                }
             }
             JsonUtil.writeJson(resp, 200, JsonUtil.success(results));
         } finally {
@@ -45,10 +65,14 @@ public class ConnectivityServlet extends HttpServlet {
         }
     }
 
-    private JsonObject testSingle(String brokerTypeStr) {
+    private JsonObject testSingle(String brokerTypeStr, String activeType) {
         JsonObject result = new JsonObject();
         result.addProperty("brokerType",  brokerTypeStr);
         result.addProperty("displayName", brokerTypeStr);
+        
+        boolean isActive = brokerTypeStr.equalsIgnoreCase(activeType);
+        result.addProperty("active", isActive);
+        result.addProperty("isActive", isActive);
 
         long start = System.currentTimeMillis();
         try {

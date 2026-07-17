@@ -22,12 +22,12 @@ public class MStockScripMasterFetcher {
     private static final Logger log = LoggerFactory.getLogger(MStockScripMasterFetcher.class);
     private static final String SCRIP_MASTER_URL = "https://api.mstock.trade/openapi/typeb/instruments/OpenAPIScripMaster";
 
-    public static void fetchAndStoreScripMaster() {
+    public static void fetchAndStoreScripMaster(String prefix) {
         AlgoKeyValueDAO dao = new AlgoKeyValueDAO();
-        String apiKey = dao.getValue("mstock.api_key");
-        String jwtToken = dao.getValue("mstock.jwt_token");
+        String apiKey = dao.getValue(prefix + ".api_key");
+        String jwtToken = dao.getValue(prefix + ".jwt_token");
         String todayDate = java.time.LocalDate.now().toString();
-        String lastFetchDate = dao.getValue("mstock.scrip.master.date");
+        String lastFetchDate = dao.getValue(prefix + ".scrip.master.date");
 
         if (todayDate.equals(lastFetchDate)) {
             log.info("mStock scrip master table is up to date (fetched on {}). Skipping download.", lastFetchDate);
@@ -35,7 +35,7 @@ public class MStockScripMasterFetcher {
         }
 
         if (apiKey == null || jwtToken == null) {
-            log.error("Cannot fetch mStock Scrip Master: mstock.api_key or mstock.jwt_token is missing in DB.");
+            log.error("Cannot fetch mStock Scrip Master: {}.api_key or {}.jwt_token is missing in DB.", prefix, prefix);
             return;
         }
 
@@ -120,7 +120,7 @@ public class MStockScripMasterFetcher {
 
                     pstmt.executeBatch();
                     conn.commit();
-                    dao.setValue("mstock.scrip.master.date", todayDate, "SYSTEM");
+                    dao.setValue(prefix + ".scrip.master.date", todayDate, "SYSTEM");
                     log.info("Successfully processed and stored {} records in mstock_scrip_master.", count);
                 } finally {
                     conn.setAutoCommit(true);

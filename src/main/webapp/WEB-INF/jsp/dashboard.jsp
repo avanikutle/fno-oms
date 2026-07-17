@@ -37,28 +37,20 @@
     </div>
 
     <span class="nav-section-label">Trading</span>
-    <a class="nav-item active" data-page="dashboard" id="nav-dashboard">
-      <span class="nav-icon">📈</span> Dashboard
+    <a class="nav-item active" data-page="portfolio" id="nav-portfolio">
+      <span class="nav-icon">📊</span> Portfolio
     </a>
     <a class="nav-item" data-page="watchlist" id="nav-watchlist">
       <span class="nav-icon">👁</span> Watchlist
     </a>
-    <a class="nav-item" data-page="strategies" id="nav-strategies">
-      <span class="nav-icon">⚡</span> Strategies
-    </a>
+
     <a class="nav-item" data-page="orders" id="nav-orders">
       <span class="nav-icon">📋</span> Orders
-    </a>
-    <a class="nav-item" data-page="portfolio" id="nav-portfolio">
-      <span class="nav-icon">📊</span> Portfolio
     </a>
 
     <span class="nav-section-label" style="margin-top:8px">System</span>
     <a class="nav-item" data-page="connectivity" id="nav-connectivity">
       <span class="nav-icon">🔌</span> Connectivity
-    </a>
-    <a class="nav-item" data-page="settings" id="nav-settings">
-      <span class="nav-icon">⚙️</span> Settings
     </a>
 
     <div class="sidebar-footer">
@@ -76,13 +68,10 @@
   <main class="main-content">
 
     <!-- Each page is a separate JSP fragment included here -->
-    <jsp:include page="pages/dashboard.jsp"/>
-    <jsp:include page="pages/watchlist.jsp"/>
-    <jsp:include page="pages/strategies.jsp"/>
-    <jsp:include page="pages/orders.jsp"/>
     <jsp:include page="pages/portfolio.jsp"/>
+    <jsp:include page="pages/watchlist.jsp"/>
+    <jsp:include page="pages/orders.jsp"/>
     <jsp:include page="pages/connectivity.jsp"/>
-    <jsp:include page="pages/settings.jsp"/>
 
   </main>
 </div>
@@ -93,7 +82,6 @@
 <!-- Scripts -->
 <script src="<%= ctx %>/static/js/app.js?v=2.3"></script>
 <script src="<%= ctx %>/static/js/quotes.js"></script>
-<script src="<%= ctx %>/static/js/strategies.js"></script>
 <script src="<%= ctx %>/static/js/orders.js?v=2.3"></script>
 <script src="<%= ctx %>/static/js/portfolio.js"></script>
 <script src="<%= ctx %>/static/js/connectivity.js"></script>
@@ -110,11 +98,8 @@
       }
       // Load page-specific data on nav
       if (page === 'orders')       Orders.loadOrderBook();
-      if (page === 'strategies')   Strategies.init();
       if (page === 'portfolio')    Portfolio.load();
-      if (page === 'dashboard')    Dashboard.load();
       if (page === 'connectivity') Connectivity.load();
-      if (page === 'settings')     Settings.load();
     });
   });
 </script>

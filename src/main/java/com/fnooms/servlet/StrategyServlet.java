@@ -37,9 +37,29 @@ public class StrategyServlet extends HttpServlet {
                 String watchlist = kvDao.getValue("algo.strategy.watchlist");
                 JsonUtil.writeJson(resp, 200, JsonUtil.success(watchlist == null ? "" : watchlist));
             } else {
-                // Return all active strategies
+                // Return all active strategies with their live state
                 List<StrategyConfig> configs = StrategyConfigLoader.loadConfigs();
-                JsonUtil.writeJson(resp, 200, JsonUtil.success(configs));
+                com.fnooms.dao.TradeStatusDAO tradeStatusDao = new com.fnooms.dao.TradeStatusDAO();
+                JsonArray resultArr = new JsonArray();
+                for (StrategyConfig config : configs) {
+                    TradeState state = tradeStatusDao.loadLatestState(config.getSymbol());
+                    JsonObject obj = new JsonObject();
+                    obj.add("config", JsonUtil.parseObject(JsonUtil.success(config).get("data").toString())); // Quick hack to serialize config to json object
+                    
+                    JsonObject stateObj = new JsonObject();
+                    stateObj.addProperty("entered", state.isEntered());
+                    stateObj.addProperty("exited", state.isExited());
+                    stateObj.addProperty("entryPrice", state.getEntryPrice());
+                    stateObj.addProperty("currentTarget", state.getCurrentTarget());
+                    stateObj.addProperty("currentStopLoss", state.getCurrentStopLoss());
+                    stateObj.addProperty("entryOrderId", state.getEntryOrderId());
+                    stateObj.addProperty("exitOrderId", state.getExitOrderId());
+                    
+                    obj.add("state", stateObj);
+                    resultArr.add(obj);
+                }
+                
+                JsonUtil.writeJson(resp, 200, JsonUtil.success(resultArr));
             }
         } catch (Exception e) {
             log.error("Error in StrategyServlet GET", e);
@@ -85,13 +105,14 @@ public class StrategyServlet extends HttpServlet {
                 int quantity = json.get("quantity").getAsInt();
                 String txType = json.has("transaction_type") ? json.get("transaction_type").getAsString() : "BUY";
                 String condition = json.has("entry_condition") ? json.get("entry_condition").getAsString() : "GREATER_THAN_EQUAL";
-                String product = json.has("product") ? json.get("product").getAsString() : "CARRYFORWARD";
+                double trailingSlPoints = json.has("trailing_sl_points") ? json.get("trailing_sl_points").getAsDouble() : 0.0;
+                String product = json.has("product") ? json.get("product").getAsString() : "MIS";
                 
                 // Insert into DB
-                String sql = "INSERT INTO strategies (scrip_name, exchange_id, name, entry_price, target_price, stop_loss, quantity, transaction_type, entry_condition, product, is_active) " +
-                             "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) " +
+                String sql = "INSERT INTO strategies (scrip_name, exchange_id, name, entry_price, target_price, stop_loss, trailing_sl_points, quantity, transaction_type, entry_condition, product, is_active) " +
+                             "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) " +
                              "ON CONFLICT(scrip_name) DO UPDATE SET " +
-                             "entry_price=EXCLUDED.entry_price, target_price=EXCLUDED.target_price, stop_loss=EXCLUDED.stop_loss, quantity=EXCLUDED.quantity;";
+                             "entry_price=EXCLUDED.entry_price, target_price=EXCLUDED.target_price, stop_loss=EXCLUDED.stop_loss, trailing_sl_points=EXCLUDED.trailing_sl_points, quantity=EXCLUDED.quantity;";
                              
                 try (Connection conn = DatabaseManager.getInstance().getConnection();
                      PreparedStatement pstmt = conn.prepareStatement(sql)) {
@@ -101,11 +122,12 @@ public class StrategyServlet extends HttpServlet {
                     pstmt.setDouble(4, entryPrice);
                     pstmt.setDouble(5, targetPrice);
                     pstmt.setDouble(6, stopLoss);
-                    pstmt.setInt(7, quantity);
-                    pstmt.setString(8, txType);
-                    pstmt.setString(9, condition);
-                    pstmt.setString(10, product);
-                    pstmt.setBoolean(11, true);
+                    pstmt.setDouble(7, trailingSlPoints);
+                    pstmt.setInt(8, quantity);
+                    pstmt.setString(9, txType);
+                    pstmt.setString(10, condition);
+                    pstmt.setString(11, product);
+                    pstmt.setBoolean(12, true); // is_active
                     pstmt.executeUpdate();
                 }
 

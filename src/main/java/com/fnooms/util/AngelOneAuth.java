@@ -14,8 +14,9 @@ public class AngelOneAuth {
         OkHttpClient client = new OkHttpClient().newBuilder().build();
         MediaType mediaType = MediaType.parse("application/json");
 
-        String clientId = CredsUtil.getAngelOneClientCode();
-        String apiKey = CredsUtil.getAngelOneApiKey();
+        String prefix = "angelone";
+        String clientId = CredsUtil.getAngelOneClientCode(prefix);
+        String apiKey = CredsUtil.getApiKey(prefix);
 
         // Construct the JSON body
         JsonObject requestBodyJson = new JsonObject();

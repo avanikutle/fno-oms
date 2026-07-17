@@ -190,7 +190,7 @@ class MStockBrokerClientTest {
         private final String baseUrl;
 
         MStockBrokerClientTestable(String baseUrl) {
-            super();
+            super("mstock");
             // Strip trailing slash
             this.baseUrl = baseUrl.endsWith("/")
                     ? baseUrl.substring(0, baseUrl.length() - 1)

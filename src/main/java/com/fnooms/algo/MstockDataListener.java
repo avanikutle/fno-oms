@@ -16,16 +16,19 @@ import java.util.stream.Collectors;
 
 public class MstockDataListener implements MarketDataListener {
     private static final Logger log = LoggerFactory.getLogger(MstockDataListener.class);
-    private static final String ws_url = CredsUtil.getWsCreds();
+    private final String ws_url;
 
     private final StrategyEngine engine;
     private final List<StrategyConfig> configs;
+    private final String brokerPrefix;
     private volatile boolean running = true;
     private volatile WebSocket currentWebSocket;
 
-    public MstockDataListener(StrategyEngine engine, List<StrategyConfig> configs) {
+    public MstockDataListener(StrategyEngine engine, List<StrategyConfig> configs, String brokerPrefix) {
         this.engine = engine;
         this.configs = configs;
+        this.brokerPrefix = brokerPrefix;
+        this.ws_url = CredsUtil.getWsCreds(brokerPrefix);
     }
 
     @Override
@@ -91,7 +94,7 @@ public class MstockDataListener implements MarketDataListener {
                         webSocket.request(1);
 
                         // Send login message to maintain session
-                        webSocket.sendText("LOGIN:" + CredsUtil.getMStockJwtToken(), true);
+                        webSocket.sendText("LOGIN:" + CredsUtil.getJwtToken(brokerPrefix), true);
 
                         // Build dynamic subscription payload based on configured tokens
                         List<String> tokens = configs.stream()

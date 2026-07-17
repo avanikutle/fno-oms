@@ -27,7 +27,7 @@ public class AppStartupListener implements ServletContextListener {
             log.info("✓ Database pool ready");
 
             // 2. Fetch today's scrip master
-            com.fnooms.util.MStockScripMasterFetcher.fetchAndStoreScripMaster();
+            com.fnooms.util.MStockScripMasterFetcher.fetchAndStoreScripMaster("mstock");
             log.info("✓ Scrip master loaded");
 
             // 3. Start async event bus writer threads

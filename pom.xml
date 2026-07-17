@@ -178,8 +178,8 @@
                         <home>${tomcat.home}</home>
                     </container>
                     <configuration>
-                        <type>existing</type>
-                        <home>${tomcat.home}</home>
+                        <type>standalone</type>
+                        <home>/Users/birsa/dev/sm/fno-oms/tomcat-base</home>
                     </configuration>
                     <deployables>
                         <deployable>

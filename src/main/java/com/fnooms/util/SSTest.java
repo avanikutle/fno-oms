@@ -9,7 +9,7 @@ import java.net.http.HttpResponse;
 public class SSTest {
         public static void main(String[] args) throws IOException, InterruptedException {
 
-                System.out.println("Hello motto" + CredsUtil.getWsCreds());
+                System.out.println("Hello motto" + CredsUtil.getWsCreds("mstock"));
 
                 // HttpClient client = HttpClient.newBuilder()
                 // .followRedirects(HttpClient.Redirect.NORMAL)

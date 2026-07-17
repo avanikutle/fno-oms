@@ -2,6 +2,7 @@ package com.fnooms.algo;
 
 import com.fnooms.service.OrderService;
 import com.fnooms.dao.AlgoKeyValueDAO;
+import com.fnooms.dao.TradeStatusDAO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -38,18 +39,19 @@ public class AlgoOrchestrator {
         List<StrategyConfig> configs = StrategyConfigLoader.loadConfigs();
 
         OrderService orderService = new OrderService();
+        TradeStatusDAO tradeStatusDao = new TradeStatusDAO();
 
         // 3. Initialize Strategy Engine with target order broker
-        engine = new StrategyEngine(orderService, kvDao);
+        engine = new StrategyEngine(orderService, kvDao, tradeStatusDao);
         for (StrategyConfig config : configs) {
             engine.addConfig(config);
         }
 
         // 4. Spawn the respective Market Data Listener based on feedBroker
-        if ("ANGELONE".equalsIgnoreCase(feedBroker)) {
-            listener = new AngelOneDataListener(engine, configs);
-        } else if ("MSTOCK".equalsIgnoreCase(feedBroker)) {
-            listener = new MstockDataListener(engine, configs);
+        if (feedBroker.toLowerCase().startsWith("angelone")) {
+            listener = new AngelOneDataListener(engine, configs, feedBroker.toLowerCase());
+        } else if (feedBroker.toLowerCase().startsWith("mstock")) {
+            listener = new MstockDataListener(engine, configs, feedBroker.toLowerCase());
         } else {
             log.error("Unsupported feed broker: {}", feedBroker);
             return;

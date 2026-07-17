@@ -20,12 +20,14 @@ public class AngelOneDataListener implements MarketDataListener {
 
     private final StrategyEngine engine;
     private final List<StrategyConfig> configs;
+    private final String brokerPrefix;
     private volatile WebSocket currentWebSocket;
     private final java.util.concurrent.ScheduledExecutorService pingScheduler = java.util.concurrent.Executors.newSingleThreadScheduledExecutor();
 
-    public AngelOneDataListener(StrategyEngine engine, List<StrategyConfig> configs) {
+    public AngelOneDataListener(StrategyEngine engine, List<StrategyConfig> configs, String brokerPrefix) {
         this.engine = engine;
         this.configs = configs;
+        this.brokerPrefix = brokerPrefix;
         this.pingScheduler.scheduleAtFixedRate(() -> {
             if (currentWebSocket != null && !currentWebSocket.isInputClosed() && !currentWebSocket.isOutputClosed()) {
                 try {
@@ -120,10 +122,10 @@ public class AngelOneDataListener implements MarketDataListener {
                 .build();
 
         client.newWebSocketBuilder()
-                .header("Authorization", "Bearer " + CredsUtil.getAngelOneJwtToken())
-                .header("x-api-key", CredsUtil.getAngelOneApiKey())
-                .header("x-client-code", CredsUtil.getAngelOneClientCode())
-                .header("x-feed-token", CredsUtil.getAngelOneFeedToken())
+                .header("Authorization", "Bearer " + CredsUtil.getJwtToken(brokerPrefix))
+                .header("x-api-key", CredsUtil.getApiKey(brokerPrefix))
+                .header("x-client-code", CredsUtil.getAngelOneClientCode(brokerPrefix))
+                .header("x-feed-token", CredsUtil.getAngelOneFeedToken(brokerPrefix))
                 .buildAsync(URI.create(WS_URL), new WebSocket.Listener() {
                     @Override
                     public void onOpen(WebSocket webSocket) {

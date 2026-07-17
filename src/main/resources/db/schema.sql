@@ -245,3 +245,31 @@ CREATE INDEX IF NOT EXISTS idx_mstock_scrip_symbol ON mstock_scrip_master(tradin
 CREATE OR REPLACE TRIGGER trg_mstock_scrip_master_updated_at
     BEFORE UPDATE ON mstock_scrip_master
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+-- ============================================================
+-- Trade Status (tracks the current lifecycle state of active trades)
+-- ============================================================
+CREATE TABLE IF NOT EXISTS trade_status (
+    id SERIAL PRIMARY KEY,
+    biz_date DATE NOT NULL DEFAULT CURRENT_DATE,
+    symbol VARCHAR(100) NOT NULL,
+    exchange_token VARCHAR(100), -- Unique across all brokers
+    entered BOOLEAN DEFAULT FALSE,
+    exited BOOLEAN DEFAULT FALSE,
+    entry_price DECIMAL(12, 2) DEFAULT 0,
+    current_target DECIMAL(12, 2) DEFAULT 0,
+    current_stop_loss DECIMAL(12, 2) DEFAULT 0,
+    entry_order_id VARCHAR(100),
+    exit_order_id VARCHAR(100),
+    comments TEXT,
+    updated_by VARCHAR(50) DEFAULT 'SYSTEM',
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Index to quickly find the latest active trade for a symbol today
+CREATE INDEX IF NOT EXISTS idx_trade_status_lookup 
+    ON trade_status (biz_date DESC, symbol, id DESC);
+
+CREATE OR REPLACE TRIGGER trg_trade_status_updated_at
+    BEFORE UPDATE ON trade_status
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();

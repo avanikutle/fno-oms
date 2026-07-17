@@ -17,47 +17,48 @@ public class BrokerLoginManager {
      * @param totp       The 6-digit code provided by the user via UI
      * @return true if successful, false otherwise
      */
-    public boolean performWebLogin(String brokerType, String totp) {
+    public boolean performWebLogin(String brokerPrefix, String totp) {
         try {
-            if ("MSTOCK".equalsIgnoreCase(brokerType)) {
-                String userId = dao.getValue("mstock.userid");
-                String password = dao.getValue("mstock.pdcred");
-                String apiKey = dao.getValue("mstock.api_key");
+            String prefix = brokerPrefix.toLowerCase();
+            if (prefix.startsWith("mstock")) {
+                String userId = dao.getValue(prefix + ".userid");
+                String password = dao.getValue(prefix + ".pdcred");
+                String apiKey = dao.getValue(prefix + ".api_key");
 
                 if (userId == null || password == null || apiKey == null) {
-                    throw new IllegalStateException("Missing mStock credentials in algo_key_value table");
+                    throw new IllegalStateException("Missing mStock credentials in algo_key_value table for prefix: " + prefix);
                 }
 
                 MStockLogin loginImpl = new MStockLogin();
                 String[] tokens = loginImpl.login(userId, password, totp, apiKey);
                 
-                dao.setValue("mstock.jwt_token", tokens[0], "WEB_LOGIN");
-                dao.setValue("mstock.refresh_token", tokens[1], "WEB_LOGIN");
-                log.info("Successfully updated mStock tokens in database.");
+                dao.setValue(prefix + ".jwt_token", tokens[0], "WEB_LOGIN");
+                dao.setValue(prefix + ".refresh_token", tokens[1], "WEB_LOGIN");
+                log.info("Successfully updated mStock tokens in database for prefix {}.", prefix);
                 return true;
 
-            } else if ("ANGELONE".equalsIgnoreCase(brokerType)) {
-                String userId = dao.getValue("angelone.client_code");
-                String password = dao.getValue("angelone.pdcred");
-                String apiKey = dao.getValue("angelone.api_key");
+            } else if (prefix.startsWith("angelone")) {
+                String userId = dao.getValue(prefix + ".client_code");
+                String password = dao.getValue(prefix + ".pdcred");
+                String apiKey = dao.getValue(prefix + ".api_key");
 
                 if (userId == null || password == null || apiKey == null) {
-                    throw new IllegalStateException("Missing AngelOne credentials in algo_key_value table");
+                    throw new IllegalStateException("Missing AngelOne credentials in algo_key_value table for prefix: " + prefix);
                 }
 
                 AngelOneLogin loginImpl = new AngelOneLogin();
                 String[] tokens = loginImpl.login(userId, password, totp, apiKey);
 
-                dao.setValue("angelone.jwt_token", tokens[0], "WEB_LOGIN");
-                dao.setValue("angelone.feed_token", tokens[1], "WEB_LOGIN");
-                log.info("Successfully updated AngelOne JWT token in database.");
+                dao.setValue(prefix + ".jwt_token", tokens[0], "WEB_LOGIN");
+                dao.setValue(prefix + ".feed_token", tokens[1], "WEB_LOGIN");
+                log.info("Successfully updated AngelOne JWT token in database for prefix {}.", prefix);
                 return true;
 
             } else {
-                throw new IllegalArgumentException("Unsupported broker type for login: " + brokerType);
+                throw new IllegalArgumentException("Unsupported broker type for login: " + prefix);
             }
         } catch (Exception e) {
-            log.error("Login failed for broker: " + brokerType, e);
+            log.error("Login failed for broker prefix: " + brokerPrefix, e);
             return false;
         }
     }

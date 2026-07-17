@@ -32,8 +32,8 @@ public class MStockBrokerClient implements BrokerClient {
     private final MStockBasketApi basketApi;
     private final MStockMarginApi marginApi;
 
-    public MStockBrokerClient() {
-        this.config = new MStockConfig();
+    public MStockBrokerClient(String prefix) {
+        this.config = new MStockConfig(prefix);
         OkHttpClient http = new OkHttpClient.Builder()
                 .connectTimeout(10, TimeUnit.SECONDS)
                 .readTimeout(15, TimeUnit.SECONDS)

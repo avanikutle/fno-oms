@@ -16,8 +16,9 @@ public class MStockApiTester {
     public static void main(String[] args) {
         System.out.println("=== Starting MStock API Tester ===");
 
-        String apiKey = CredsUtil.getMStockApiKey();
-        String jwtToken = CredsUtil.getMStockJwtToken();
+        String prefix = "mstock";
+        String apiKey = CredsUtil.getApiKey(prefix);
+        String jwtToken = CredsUtil.getJwtToken(prefix);
 
         if (apiKey == null || jwtToken == null) {
             System.err.println("Missing mstock.api_key or mstock.jwt_token in DB");
@@ -27,7 +28,7 @@ public class MStockApiTester {
         System.out.println("Credentials loaded successfully.");
 
         // Instantiate the SDK Client
-        MStockBrokerClient client = new MStockBrokerClient();
+        MStockBrokerClient client = new MStockBrokerClient(prefix);
 
         try {
             System.out.println("\n--- 1. Testing Order Book ---");

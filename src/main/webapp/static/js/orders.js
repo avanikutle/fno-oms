@@ -7,7 +7,8 @@ const Orders = {
   currentSide: 'BUY',
   refreshTimer: null,
   allOrders: [],
-  currentTab: 'open',
+  allAlgos: [],
+  currentTab: 'broker',
 
   load() {
     // Only render dynamic form if JSP static form is not present
@@ -46,23 +47,35 @@ const Orders = {
   onTypeChange() {
     const typeEl = document.getElementById('order-type') || document.getElementById('ord-order-type');
     const type   = typeEl?.value || 'MARKET';
-    // JSP field divs
+    
+    // Core fields
     const pf = document.getElementById('price-field');
     const tf = document.getElementById('trigger-field');
-    // Dynamic form field groups
-    const pg = document.getElementById('price-group');
-    const tg = document.getElementById('trigger-group');
-    const showPrice   = type === 'LIMIT' || type === 'SL';
+    
+    // ALGO fields
+    const targetF = document.getElementById('algo-target-field');
+    const slF     = document.getElementById('algo-sl-field');
+    const trailF  = document.getElementById('algo-trail-field');
+    
+    const showPrice   = type === 'LIMIT' || type === 'SL' || type === 'ALGO';
     const showTrigger = type === 'SL'    || type === 'SL-M';
-    if (pf) pf.style.display = showPrice   ? 'block' : 'none';
+    const isAlgo      = type === 'ALGO';
+
+    if (pf) {
+        pf.style.display = showPrice ? 'block' : 'none';
+        const lbl = document.getElementById('lbl-price');
+        if (lbl) lbl.textContent = isAlgo ? 'Entry Price' : 'Price';
+    }
     if (tf) tf.style.display = showTrigger ? 'block' : 'none';
-    if (pg) pg.style.display = showPrice   ? 'block' : 'none';
-    if (tg) tg.style.display = showTrigger ? 'block' : 'none';
+    
+    if (targetF) targetF.style.display = isAlgo ? 'block' : 'none';
+    if (slF) slF.style.display = isAlgo ? 'block' : 'none';
+    if (trailF) trailF.style.display = isAlgo ? 'block' : 'none';
   },
 
   // Called by JSP Clear button
   resetForm() {
-    ['order-symbol','order-qty','order-price','order-trigger'].forEach(id => {
+    ['order-symbol','order-qty','order-price','order-trigger','algo-target','algo-sl','algo-trail'].forEach(id => {
       const el = document.getElementById(id); if (el) el.value = '';
     });
     this.setSide('BUY');
@@ -73,29 +86,61 @@ const Orders = {
   // Called by JSP Place Order button — reads from static JSP form
   async placeOrder() {
     const side = this.currentSide;
-    const body = {
-      exchange:        document.getElementById('order-exchange')?.value || 'NFO',
-      symbol:          (document.getElementById('order-symbol')?.value  || '').trim().toUpperCase(),
-      transactionType: side,
-      orderType:       document.getElementById('order-type')?.value    || 'MARKET',
-      product:         document.getElementById('order-product')?.value  || 'MIS',
-      quantity:        parseInt(document.getElementById('order-qty')?.value) || 0,
-      price:           parseFloat(document.getElementById('order-price')?.value)   || null,
-      triggerPrice:    parseFloat(document.getElementById('order-trigger')?.value) || null,
-      validity:        'DAY',
-    };
-    if (!body.symbol)       { Toast.error('Validation', 'Symbol is required'); return; }
-    if (body.quantity <= 0) { Toast.error('Validation', 'Enter a valid quantity'); return; }
-    try {
-      const result = await API.post('/api/orders', body);
-      if (result.status === 'success') {
-        Toast.success('Order Placed ✓', `${side} ${body.quantity} ${body.symbol} | ID: ${result.data?.brokerOrderId}`);
-        this.resetForm();
-        this.loadOrderBook();
-      } else {
-        Toast.error('Order Failed', result.message);
-      }
-    } catch(e) { Toast.error('Network Error', e.message); }
+    const orderType = document.getElementById('order-type')?.value || 'MARKET';
+    
+    if (orderType === 'ALGO') {
+      const body = {
+        exchange:        document.getElementById('order-exchange')?.value || 'NFO',
+        symbol:          (document.getElementById('order-symbol')?.value  || '').trim().toUpperCase(),
+        transaction_type: side,
+        product:         document.getElementById('order-product')?.value  || 'MIS',
+        quantity:        parseInt(document.getElementById('order-qty')?.value) || 0,
+        entry_price:     parseFloat(document.getElementById('order-price')?.value) || 0,
+        target_price:    parseFloat(document.getElementById('algo-target')?.value) || 0,
+        stop_loss:       parseFloat(document.getElementById('algo-sl')?.value) || 0,
+        trailing_sl_points: parseFloat(document.getElementById('algo-trail')?.value) || 0,
+      };
+      
+      if (!body.symbol)       { Toast.error('Validation', 'Symbol is required'); return; }
+      if (body.quantity <= 0) { Toast.error('Validation', 'Enter a valid quantity'); return; }
+      if (body.entry_price <= 0) { Toast.error('Validation', 'Enter entry price'); return; }
+      
+      try {
+        const result = await API.post('/api/strategies/add', body);
+        if (result.status === 'success') {
+          Toast.success('Algo Strategy Placed ✓', `${side} ${body.quantity} ${body.symbol}`);
+          this.resetForm();
+          this.loadOrderBook();
+        } else {
+          Toast.error('Order Failed', result.message);
+        }
+      } catch(e) { Toast.error('Network Error', e.message); }
+      
+    } else {
+      const body = {
+        exchange:        document.getElementById('order-exchange')?.value || 'NFO',
+        symbol:          (document.getElementById('order-symbol')?.value  || '').trim().toUpperCase(),
+        transactionType: side,
+        orderType:       orderType,
+        product:         document.getElementById('order-product')?.value  || 'MIS',
+        quantity:        parseInt(document.getElementById('order-qty')?.value) || 0,
+        price:           parseFloat(document.getElementById('order-price')?.value)   || null,
+        triggerPrice:    parseFloat(document.getElementById('order-trigger')?.value) || null,
+        validity:        'DAY',
+      };
+      if (!body.symbol)       { Toast.error('Validation', 'Symbol is required'); return; }
+      if (body.quantity <= 0) { Toast.error('Validation', 'Enter a valid quantity'); return; }
+      try {
+        const result = await API.post('/api/orders', body);
+        if (result.status === 'success') {
+          Toast.success('Order Placed ✓', `${side} ${body.quantity} ${body.symbol} | ID: ${result.data?.brokerOrderId}`);
+          this.resetForm();
+          this.loadOrderBook();
+        } else {
+          Toast.error('Order Failed', result.message);
+        }
+      } catch(e) { Toast.error('Network Error', e.message); }
+    }
   },
 
   prefill(symbol, side) {
@@ -259,21 +304,44 @@ const Orders = {
     if (!el) return;
 
     try {
-      const res = await API.get('/api/orders');
-      this.allOrders = res.data || [];
+      const [resOrders, resAlgos] = await Promise.all([
+        API.get('/api/orders').catch(() => ({ data: [] })),
+        API.get('/api/strategies').catch(() => ({ data: [] }))
+      ]);
+      this.allOrders = resOrders.data || [];
+      this.allAlgos = resAlgos.data || [];
       this.renderOrders();
     } catch(e) {
-      const el = document.getElementById('orderbook-tbody');
       if (el) el.innerHTML = `<tr><td colspan="9" style="color:var(--red);padding:16px">${escHtml(e.message)}</td></tr>`;
     }
   },
 
   setTab(tab) {
     this.currentTab = tab;
-    document.getElementById('tab-open').className = 'btn btn-sm ' + (tab === 'open' ? '' : 'btn-ghost');
-    document.getElementById('tab-open').style.background = tab === 'open' ? 'var(--bg-card)' : 'transparent';
-    document.getElementById('tab-history').className = 'btn btn-sm ' + (tab === 'history' ? '' : 'btn-ghost');
-    document.getElementById('tab-history').style.background = tab === 'history' ? 'var(--bg-card)' : 'transparent';
+    ['broker', 'pending', 'executed'].forEach(t => {
+      const btn = document.getElementById('tab-' + t);
+      if (btn) {
+        btn.className = 'btn btn-sm ' + (tab === t ? '' : 'btn-ghost');
+        btn.style.background = tab === t ? 'var(--bg-card)' : 'transparent';
+      }
+    });
+    
+    // Update headers based on tab
+    const thead = document.getElementById('orderbook-thead');
+    if (thead) {
+        if (tab === 'broker') {
+            thead.innerHTML = `
+            <tr>
+              <th>Symbol</th><th>Side</th><th>Type</th><th>Qty</th><th>Price</th><th>Avg</th><th>Status</th><th>Order ID</th><th>Action</th>
+            </tr>`;
+        } else {
+            thead.innerHTML = `
+            <tr>
+              <th>Symbol</th><th>Side</th><th>Entry Cond.</th><th>Target</th><th>SL</th><th>Trail</th><th>Status</th><th>State</th><th>Action</th>
+            </tr>`;
+        }
+    }
+    
     this.renderOrders();
   },
 
@@ -281,23 +349,13 @@ const Orders = {
     const el = document.getElementById('orderbook-tbody');
     if (!el) return;
 
-    if (!this.allOrders.length) {
-      el.innerHTML = `<tr><td colspan="9">${emptyState('📋', 'No orders today', 'Place an order using the form')}</td></tr>`;
-      return;
-    }
-
-    const filtered = this.allOrders.filter(o => {
-      const isPending = o.status && (o.status.toUpperCase().includes('OPEN') || o.status.toUpperCase().includes('PENDING'));
-      return this.currentTab === 'open' ? isPending : !isPending;
-    });
-
-    if (!filtered.length) {
-      el.innerHTML = `<tr><td colspan="9">${emptyState('📋', 'No orders found', 'Try checking the other tab')}</td></tr>`;
-      return;
-    }
-
-    el.innerHTML = filtered.map(o => {
-        const side  = (o.transactionType || '').toUpperCase();
+    if (this.currentTab === 'broker') {
+        if (!this.allOrders.length) {
+          el.innerHTML = `<tr><td colspan="9">${emptyState('📋', 'No broker orders found', 'Place an order using the form')}</td></tr>`;
+          return;
+        }
+        el.innerHTML = this.allOrders.map(o => {
+            const side  = (o.transactionType || '').toUpperCase();
         const stCls = ({'COMPLETE':'complete','O-Completed':'complete','OPEN':'open','O-Pending':'open','REJECTED':'rejected','CANCELLED':'cancelled','O-Cancelled':'cancelled'}[o.status] || '');
         const isCancellable = (o.status && (o.status.toUpperCase().includes('OPEN') || o.status.toUpperCase().includes('PENDING')));
         const isCloseable   = (o.status && (o.status.toUpperCase().includes('COMPLETE') || o.status.toUpperCase().includes('EXECUTED')));
@@ -329,6 +387,51 @@ const Orders = {
           <td>${actions}</td>
         </tr>`;
       }).join('');
+    } else {
+        // ALGO Tabs
+        const isExecutedTab = this.currentTab === 'executed';
+        const filtered = this.allAlgos.filter(a => (a.state.entered === isExecutedTab));
+        
+        if (!filtered.length) {
+          el.innerHTML = `<tr><td colspan="9">${emptyState('⚙️', 'No algo strategies found', 'Check the other tab')}</td></tr>`;
+          return;
+        }
+        
+        el.innerHTML = filtered.map(a => {
+            const c = a.config;
+            const s = a.state;
+            const side = (c.transactionType || 'BUY').toUpperCase();
+            const color = side === 'BUY' ? 'var(--green)' : 'var(--red)';
+            
+            let statusHtml = '';
+            if (s.exited) {
+                statusHtml = `<span class="badge badge-amber">Exited</span>`;
+            } else if (s.entered) {
+                statusHtml = `<span class="badge badge-green">Active (Entry: ₹${s.entryPrice})</span>`;
+            } else {
+                statusHtml = `<span class="badge badge-blue">Waiting</span>`;
+            }
+            
+            return `<tr>
+              <td><strong>${escHtml(c.symbol)}</strong></td>
+              <td><span style="color:${color};font-weight:600">${side}</span></td>
+              <td>${c.entryCondition} ${c.entryPrice}</td>
+              <td>₹${c.targetPrice}</td>
+              <td>₹${s.currentStopLoss > 0 ? s.currentStopLoss : c.stopLossPrice}</td>
+              <td>${c.trailingSlPoints} pts</td>
+              <td>${statusHtml}</td>
+              <td>
+                <div style="font-size:11px;color:var(--text-muted)">
+                  Entry: ${s.entryOrderId || '--'}<br>
+                  Exit: ${s.exitOrderId || '--'}
+                </div>
+              </td>
+              <td>
+                 <!-- Action buttons could go here (e.g. Cancel) -->
+              </td>
+            </tr>`;
+        }).join('');
+    }
   },
 
   async cancel(orderId) {
@@ -354,7 +457,8 @@ const Orders = {
     
     const priceStr = await Modal.prompt(
       'Close Position', 
-      `Close position: ${data.side} ${data.quantity} ${data.symbol}\n\nEnter Limit Price (Leave blank for MARKET order):`
+      `Close position: ${data.side} ${data.quantity} ${data.symbol}\n\nEnter Limit Price (Leave blank for MARKET order):`,
+      'Leave blank for MARKET'
     );
     if (priceStr === null) return; // User cancelled the prompt
 

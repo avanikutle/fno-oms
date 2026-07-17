@@ -13,12 +13,12 @@ public class MStockConfig {
     private final String apiKey;
     private final String accessToken;
 
-    public MStockConfig() {
+    public MStockConfig(String prefix) {
         AppConfig app = AppConfig.getInstance();
         this.baseUrl      = app.getMStockBaseUrl();
         this.apiVersion   = app.getMStockApiVersion();
-        this.apiKey       = CredsUtil.getMStockApiKey();
-        this.accessToken  = CredsUtil.getMStockJwtToken();
+        this.apiKey       = CredsUtil.getApiKey(prefix);
+        this.accessToken  = CredsUtil.getJwtToken(prefix);
     }
 
     /** Authorization header value for Type B: Bearer {accessToken} */

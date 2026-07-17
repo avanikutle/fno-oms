@@ -7,9 +7,7 @@
       <div class="section-subtitle">Test broker API reachability and latency</div>
     </div>
     <div style="display:flex;gap:8px;">
-      <button class="btn btn-primary" onclick="Connectivity.testAll()">⚡ Test All</button>
-      <button class="btn btn-ghost" onclick="Connectivity.login('MSTOCK')">🔑 Login mStock</button>
-      <button class="btn btn-ghost" onclick="Connectivity.login('ANGELONE')">🔑 Login AngelOne</button>
+      <button class="btn btn-primary" onclick="Connectivity.testAll()">⚡ Refresh Status</button>
     </div>
   </div>
 
@@ -35,9 +33,10 @@
             <tr>
               <th>Broker</th>
               <th>Endpoint</th>
+              <th>TOTP (If Required)</th>
               <th>Status</th>
               <th>Latency</th>
-              <th>Last Tested</th>
+              <th>Action</th>
             </tr>
           </thead>
           <tbody id="connectivity-tbody">

@@ -9,10 +9,10 @@ import java.time.Duration;
 import java.util.concurrent.CompletionStage;
 
 public class MstockReconnectWs {
-    private static String ws_url = CredsUtil.getWsCreds();
+    private static String ws_url = CredsUtil.getWsCreds("mstock");
 
     public static void main(String[] args) throws Exception {
-        CredsUtil.getWsCreds();
+        CredsUtil.getWsCreds("mstock");
         int count = 0;
         while (true) {
             try {
@@ -38,7 +38,7 @@ public class MstockReconnectWs {
                         webSocket.request(1);
 
                         // Send login message to maintain session
-                        webSocket.sendText("LOGIN:" + CredsUtil.getMStockJwtToken(), true);
+                        webSocket.sendText("LOGIN:" + CredsUtil.getJwtToken("mstock"), true);
                         // "token": "51370", "symbol": "NIFTY14JUL2624000CE",
                         // "token": "51378", "symbol": "NIFTY14JUL2624150PE",
                         String subscribeMsg = """

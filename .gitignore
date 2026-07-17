@@ -55,6 +55,9 @@ scripmaster2.csv
 # TimescaleDB data
 pgdata/
 data/
+app-logs/
+tomcat-base/
+web-logs/
 
 # Credentials
 src/main/resources/cred.properties

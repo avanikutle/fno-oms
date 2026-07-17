@@ -1,0 +1,9 @@
+1.ON traling stoploss, On entering trade it should first trail SL  should not be set, once the price moves up
+and once current tradeprice>=entryprice + SL trail value then SL trail should place an SL trail at Entry price
+and on price further moves up it should trail the SL by SL 
+
+2.there should be a flag where if the trailsl be follwoing in steps wise of trail SL value or strictly traling by the difference which is currently in.
+
+3.ANd SL is by default set and will be trigered on entering the trade if not trail sl set already .
+
+4

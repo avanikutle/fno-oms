@@ -1,5 +1,6 @@
 package com.fnooms.broker;
 
+import com.fnooms.broker.angelone.AngelOneBrokerClient;
 import com.fnooms.broker.mstock.MStockBrokerClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,20 +26,22 @@ public class BrokerClientFactory {
         if (activeType == null) {
             activeType = "MSTOCK"; // Fallback
         }
-        return buildClient(BrokerType.fromString(activeType));
+        return buildClient(activeType.toLowerCase());
     }
 
-    public static BrokerClient getClientFor(String brokerTypeStr) {
-        return buildClient(BrokerType.fromString(brokerTypeStr));
+    public static BrokerClient getClientFor(String brokerPrefix) {
+        return buildClient(brokerPrefix.toLowerCase());
     }
 
-    private static BrokerClient buildClient(BrokerType type) {
-        switch (type) {
-            case MSTOCK:
-                log.debug("Creating MStockBrokerClient");
-                return new MStockBrokerClient();
-            default:
-                throw new IllegalStateException("No implementation for broker: " + type);
+    private static BrokerClient buildClient(String prefix) {
+        if (prefix.startsWith("mstock")) {
+            log.debug("Creating MStockBrokerClient for prefix {}", prefix);
+            return new MStockBrokerClient(prefix);
+        } else if (prefix.startsWith("angelone")) {
+            log.debug("Creating AngelOneBrokerClient for prefix {}", prefix);
+            return new AngelOneBrokerClient(prefix);
+        } else {
+            throw new IllegalStateException("No implementation for broker prefix: " + prefix);
         }
     }
 }

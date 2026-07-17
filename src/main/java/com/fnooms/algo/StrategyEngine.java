@@ -14,42 +14,31 @@ public class StrategyEngine {
 
     private final OrderService orderService;
     private final com.fnooms.dao.AlgoKeyValueDAO kvDao;
+    private final com.fnooms.dao.TradeStatusDAO tradeStatusDao;
     private final com.fnooms.dao.OrderDetailsDAO orderDetailsDao;
     private final Map<String, StrategyConfig> configs = new ConcurrentHashMap<>();
     private final Map<String, TradeState> states = new ConcurrentHashMap<>();
 
-    public StrategyEngine(OrderService orderService, com.fnooms.dao.AlgoKeyValueDAO kvDao) {
+    public StrategyEngine(OrderService orderService, com.fnooms.dao.AlgoKeyValueDAO kvDao, com.fnooms.dao.TradeStatusDAO tradeStatusDao) {
         this.orderService = orderService;
         this.kvDao = kvDao;
+        this.tradeStatusDao = tradeStatusDao;
         this.orderDetailsDao = new com.fnooms.dao.OrderDetailsDAO();
     }
 
     public void addConfig(StrategyConfig config) {
         configs.put(config.getSymbol(), config);
         
-        TradeState state = new TradeState();
-        String enteredStr = kvDao.getValue("state." + config.getSymbol() + ".entered");
-        String exitedStr = kvDao.getValue("state." + config.getSymbol() + ".exited");
-        String entryPriceStr = kvDao.getValue("state." + config.getSymbol() + ".entryPrice");
-        String currentTargetStr = kvDao.getValue("state." + config.getSymbol() + ".currentTarget");
-        
-        if ("true".equalsIgnoreCase(enteredStr)) state.setEntered(true);
-        if ("true".equalsIgnoreCase(exitedStr)) state.setExited(true);
-        if (entryPriceStr != null) state.setEntryPrice(Double.parseDouble(entryPriceStr));
-        if (currentTargetStr != null) state.setCurrentTarget(Double.parseDouble(currentTargetStr));
-        
+        TradeState state = tradeStatusDao.loadLatestState(config.getSymbol());
         states.put(config.getSymbol(), state);
+        
         log.info("Loaded strategy config for symbol: {}. State -> Entered: {}, Exited: {}", config.getSymbol(), state.isEntered(), state.isExited());
     }
 
     public void resetState(String symbol) {
         if (states.containsKey(symbol)) {
             states.put(symbol, new TradeState());
-            kvDao.setValue("state." + symbol + ".entered", "false", "SYSTEM");
-            kvDao.setValue("state." + symbol + ".exited", "false", "SYSTEM");
-            kvDao.setValue("state." + symbol + ".entryPrice", "0", "SYSTEM");
-            kvDao.setValue("state." + symbol + ".currentTarget", "0", "SYSTEM");
-            log.info("Manually reset trade state for symbol: {}", symbol);
+            log.info("Manually reset trade state for symbol (will create new DB row on next entry): {}", symbol);
         }
     }
 
@@ -122,6 +111,7 @@ public class StrategyEngine {
                     if (newSl > state.getCurrentStopLoss()) {
                         state.setCurrentStopLoss(newSl);
                         log.info("Trailing SL for {} updated to {}", symbol, newSl);
+                        tradeStatusDao.updateState(symbol, state, "Trailing SL updated to " + newSl);
                     }
                 }
             }
@@ -149,12 +139,11 @@ public class StrategyEngine {
             if (response != null && response.getBrokerOrderId() != null) {
                 state.setEntryOrderId(response.getBrokerOrderId());
                 state.setEntered(true);
-                kvDao.setValue("state." + config.getSymbol() + ".entered", "true", "SYSTEM");
-                kvDao.setValue("state." + config.getSymbol() + ".entryPrice", String.valueOf(state.getEntryPrice()), "SYSTEM");
-                kvDao.setValue("state." + config.getSymbol() + ".currentTarget", String.valueOf(state.getCurrentTarget()), "SYSTEM");
                 
                 // Initial SL is strictly the configured stop loss until trailing kicks in
                 state.setCurrentStopLoss(config.getStopLossPrice());
+                
+                tradeStatusDao.saveNewState(config.getSymbol(), config.getToken(), state, "Entered Long Trade");
                 
                 // Insert to order_details
                 orderDetailsDao.insertEntry(config.getSymbol(), response.getBrokerOrderId(), config.getTransactionType(), state.getEntryPrice());
@@ -186,8 +175,8 @@ public class StrategyEngine {
             OrderResponse response = orderService.placeOrder(request);
             if (response != null && response.getBrokerOrderId() != null) {
                 state.setExitOrderId(response.getBrokerOrderId());
-                state.setExited(true); // Prevents further entries
-                kvDao.setValue("state." + config.getSymbol() + ".exited", "true", "SYSTEM");
+                state.setExited(true); // Prevents further entries until reset or next day
+                tradeStatusDao.updateState(config.getSymbol(), state, "Trade Exited");
                 
                 // Update order_details
                 orderDetailsDao.updateExit(config.getSymbol(), state.getEntryOrderId(), response.getBrokerOrderId(), exitPrice);

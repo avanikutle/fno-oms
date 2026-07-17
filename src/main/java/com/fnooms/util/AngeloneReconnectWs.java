@@ -193,18 +193,18 @@ public class AngeloneReconnectWs {
 
     // Helper methods to get credentials
     private static String getJwtToken() {
-        return CredsUtil.getAngelOneJwtToken();
+        return CredsUtil.getJwtToken("angelone");
     }
 
     private static String getApiKey() {
-        return CredsUtil.getAngelOneApiKey();
+        return CredsUtil.getApiKey("angelone");
     }
 
     private static String getClientCode() {
-        return CredsUtil.getAngelOneClientCode();
+        return CredsUtil.getAngelOneClientCode("angelone");
     }
 
     private static String getFeedToken() {
-        return CredsUtil.getAngelOneFeedToken();
+        return CredsUtil.getAngelOneFeedToken("angelone");
     }
 }

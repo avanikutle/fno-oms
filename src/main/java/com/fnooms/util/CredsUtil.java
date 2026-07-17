@@ -6,43 +6,35 @@ public class CredsUtil {
     private static final AlgoKeyValueDAO dao = new AlgoKeyValueDAO();
     public static String WS_URL = null;
 
-    public static String getMStockApiKey() {
-        return dao.getValue("mstock.api_key");
+    public static String getApiKey(String prefix) {
+        return dao.getValue(prefix + ".api_key");
     }
 
-    public static String getMStockJwtToken() {
-        return dao.getValue("mstock.jwt_token");
+    public static String getJwtToken(String prefix) {
+        return dao.getValue(prefix + ".jwt_token");
     }
 
-    public static String getWsCreds() {
+    public static String getWsCreds(String prefix) {
         // Check if the mock WebSocket is explicitly enabled
-        String isMockEnabled = dao.getValue("mock.mstock.ws.url.enabled");
+        String isMockEnabled = dao.getValue("mock." + prefix + ".ws.url.enabled");
         if ("true".equalsIgnoreCase(isMockEnabled)) {
-            String customUrl = dao.getValue("mock.mstock.ws.url");
+            String customUrl = dao.getValue("mock." + prefix + ".ws.url");
             if (customUrl != null && !customUrl.trim().isEmpty()) {
                 return customUrl;
             }
         }
 
-        String API_KEY = getMStockApiKey();
-        String ACCESS_TOKEN = getMStockJwtToken();
+        String API_KEY = getApiKey(prefix);
+        String ACCESS_TOKEN = getJwtToken(prefix);
         WS_URL = "wss://ws.mstock.trade?API_KEY=" + API_KEY + "&ACCESS_TOKEN=" + ACCESS_TOKEN;
         return WS_URL;
     }
 
-    public static String getAngelOneApiKey() {
-        return dao.getValue("angelone.api_key");
+    public static String getAngelOneClientCode(String prefix) {
+        return dao.getValue(prefix + ".client_code");
     }
 
-    public static String getAngelOneJwtToken() {
-        return dao.getValue("angelone.jwt_token");
-    }
-
-    public static String getAngelOneClientCode() {
-        return dao.getValue("angelone.client_code");
-    }
-
-    public static String getAngelOneFeedToken() {
-        return dao.getValue("angelone.feed_token");
+    public static String getAngelOneFeedToken(String prefix) {
+        return dao.getValue(prefix + ".feed_token");
     }
 }

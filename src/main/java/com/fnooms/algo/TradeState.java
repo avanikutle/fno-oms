@@ -1,6 +1,7 @@
 package com.fnooms.algo;
 
 public class TradeState {
+    private Long dbId;
     private boolean isEntered = false;
     private boolean isExited = false;
     private double currentStopLoss = 0.0;
@@ -10,6 +11,14 @@ public class TradeState {
     private String entryOrderId;
     private String exitOrderId;
     private int entryAttempts = 0;
+
+    public Long getDbId() {
+        return dbId;
+    }
+
+    public void setDbId(Long dbId) {
+        this.dbId = dbId;
+    }
 
     public double getEntryPrice() {
         return entryPrice;

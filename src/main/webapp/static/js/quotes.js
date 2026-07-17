@@ -7,6 +7,7 @@ const Quotes = {
   symbols: ['NSE:NIFTY 50', 'NSE:NIFTY BANK', 'NSE:INDIA VIX'],
   watchlist: [],          // user-added option symbols
   pollTimer: null,
+  failCount: 0,
   prevPrices: {},         // for flash animation
 
   init() {
@@ -20,6 +21,7 @@ const Quotes = {
 
   startPolling() {
     this.stop();
+    this.failCount = 0;
     this.fetchAll();
     this.pollTimer = setInterval(() => this.fetchAll(), 2000);
   },
@@ -34,10 +36,23 @@ const Quotes = {
     try {
       const res = await API.get('/api/quote?symbols=' + encodeURIComponent(syms.join(',')) + '&persist=true');
       if (res.success && res.data) {
+        this.failCount = 0;
         this.updateTicker(res.data);
         this.updateWatchlistTable(res.data);
+      } else {
+        this.failCount++;
+        if (this.failCount >= 2) {
+          this.stop();
+          Modal.confirm('Quote Polling Error', `Polling stopped after multiple failures.\nReason: ${res.message || 'Unknown error'}`);
+        }
       }
-    } catch (e) { /* silent — don't spam console on network hiccup */ }
+    } catch (e) {
+      this.failCount++;
+      if (this.failCount >= 2) {
+        this.stop();
+        Modal.confirm('Network Error', `Polling stopped. Could not reach server: ${e.message}`);
+      }
+    }
   },
 
   // ── Ticker Bar ──────────────────────────────────────────────────
@@ -119,7 +134,10 @@ const Quotes = {
     const input = document.getElementById('wl-input');
     const raw   = (input?.value || '').trim().toUpperCase();
     if (!raw) return;
-    if (!raw.includes(':')) { Toast.error('Invalid format', 'Use EXCHANGE:SYMBOL format, e.g. NFO:NIFTY24JUL24000CE'); return; }
+    if (!raw.match(/^[A-Z0-9_]+:[^/:\\]+$/i)) {
+      Toast.error('Invalid format', 'Use EXCHANGE:SYMBOL format, e.g. NFO:NIFTY24JUL24000CE'); 
+      return; 
+    }
     this.addToWatchlist(raw);
     if (input) input.value = '';
   },

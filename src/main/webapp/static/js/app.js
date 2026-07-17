@@ -5,7 +5,7 @@
 
 // ── Global App State ─────────────────────────────────────────────
 window.App = {
-  currentPage:   'dashboard',
+  currentPage:   'portfolio',
   activeBroker:  null,
   brokerConnected: false,
 };
@@ -24,7 +24,6 @@ function navigate(page) {
 
   // Trigger page-specific load
   switch (page) {
-    case 'dashboard':    Dashboard.load();     break;
     case 'orders':       Orders.load();        break;
     case 'portfolio':    Portfolio.load();     break;
     case 'connectivity': Connectivity.load();  break;
@@ -114,13 +113,13 @@ const Modal = {
       setTimeout(() => box.querySelector('#modal-ok').focus(), 50);
     });
   },
-  prompt(title, message) {
+  prompt(title, message, placeholder = '') {
     return new Promise(resolve => {
       const overlay = this.createOverlay();
       const box = this.createBox(`
         <h3 style="margin-top:0;margin-bottom:12px;font-size:16px">${escHtml(title)}</h3>
         <p style="margin-bottom:12px;font-size:14px;color:var(--text-secondary)">${escHtml(message)}</p>
-        <input type="number" id="modal-input" class="form-input" style="width:100%;margin-bottom:20px" placeholder="Leave blank for MARKET">
+        <input type="text" id="modal-input" class="form-input" style="width:100%;margin-bottom:20px" placeholder="${escHtml(placeholder)}">
         <div style="display:flex;justify-content:flex-end;gap:10px">
           <button id="modal-cancel" class="btn btn-ghost">Cancel</button>
           <button id="modal-ok" class="btn btn-primary">OK</button>
@@ -147,7 +146,9 @@ const API = {
 
   async get(path) {
     const res = await fetch(this.base + path);
-    return res.json();
+    const json = await res.json();
+    json.success = json.status === 'success';
+    return json;
   },
 
   async post(path, body) {
@@ -156,7 +157,9 @@ const API = {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
     });
-    return res.json();
+    const json = await res.json();
+    json.success = json.status === 'success';
+    return json;
   },
 
   async put(path, body) {
@@ -165,12 +168,16 @@ const API = {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
     });
-    return res.json();
+    const json = await res.json();
+    json.success = json.status === 'success';
+    return json;
   },
 
   async delete(path) {
     const res = await fetch(this.base + path, { method: 'DELETE' });
-    return res.json();
+    const json = await res.json();
+    json.success = json.status === 'success';
+    return json;
   },
 };
 
@@ -226,59 +233,7 @@ async function loadBrokerStatus() {
   } catch (e) { /* sidebar just stays grey */ }
 }
 
-// ── Dashboard Module ──────────────────────────────────────────────
-const Dashboard = {
-  async load() {
-    // Quick stats from order book + portfolio
-    const statsEl = document.getElementById('dashboard-stats');
-    if (statsEl) statsEl.innerHTML = spinner('Loading dashboard…');
-    try {
-      const [orders, positions] = await Promise.all([
-        API.get('/api/orders/local'),
-        API.get('/api/portfolio/positions').catch(() => ({ data: [] })),
-      ]);
-      this.render(orders.data || [], positions.data || [], statsEl);
-    } catch(e) {
-      if (statsEl) statsEl.innerHTML = emptyState('⚠️', 'Could not load dashboard', e.message);
-    }
-  },
 
-  render(orders, positions, el) {
-    const todayOrders  = orders.length;
-    const openOrders   = orders.filter(o => o.status === 'OPEN' || o.status === 'TRIGGER PENDING').length;
-    const totalPnl     = positions.reduce((s, p) => s + (p.pnl || 0), 0);
-    const unrealised   = positions.reduce((s, p) => s + (p.unrealisedPnl || 0), 0);
-
-    if (el) el.innerHTML = `
-      <div class="stats-grid">
-        <div class="stat-card">
-          <div class="stat-label">Today's Orders</div>
-          <div class="stat-value">${todayOrders}</div>
-          <div class="stat-change">${openOrders} open</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-label">Net P&amp;L</div>
-          <div class="stat-value ${totalPnl >= 0 ? 'positive' : 'negative'}">
-            ₹${fmt(Math.abs(totalPnl))}
-          </div>
-          <div class="stat-change">${totalPnl >= 0 ? '▲' : '▼'} today</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-label">Unrealised P&amp;L</div>
-          <div class="stat-value ${unrealised >= 0 ? 'positive' : 'negative'}">
-            ₹${fmt(Math.abs(unrealised))}
-          </div>
-          <div class="stat-change">Live MTM</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-label">Active Positions</div>
-          <div class="stat-value">${positions.filter(p => p.quantity !== 0).length}</div>
-          <div class="stat-change">net positions</div>
-        </div>
-      </div>
-    `;
-  }
-};
 
 // ── Settings Module ───────────────────────────────────────────────
 const Settings = {
@@ -415,5 +370,5 @@ document.addEventListener('DOMContentLoaded', () => {
   setInterval(loadBrokerStatus, 60_000);
 
   // Default page
-  navigate('dashboard');
+  navigate('portfolio');
 });

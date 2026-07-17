@@ -42,6 +42,7 @@
             <option value="LIMIT">LIMIT</option>
             <option value="SL">SL</option>
             <option value="SL-M">SL-M</option>
+            <option value="ALGO">ALGO (Strategy)</option>
           </select>
         </div>
         <div>
@@ -57,12 +58,26 @@
           <input id="order-qty" class="form-input" type="number" min="1" value="1">
         </div>
         <div id="price-field">
-          <label class="form-label">Price</label>
+          <label class="form-label" id="lbl-price">Price</label>
           <input id="order-price" class="form-input" type="number" step="0.05" placeholder="0.00">
         </div>
         <div id="trigger-field" style="display:none">
           <label class="form-label">Trigger Price</label>
           <input id="order-trigger" class="form-input" type="number" step="0.05" placeholder="0.00">
+        </div>
+        
+        <!-- ALGO specific fields -->
+        <div id="algo-target-field" style="display:none">
+          <label class="form-label">Target Price</label>
+          <input id="algo-target" class="form-input" type="number" step="0.05" placeholder="0.00">
+        </div>
+        <div id="algo-sl-field" style="display:none">
+          <label class="form-label">Stop Loss</label>
+          <input id="algo-sl" class="form-input" type="number" step="0.05" placeholder="0.00">
+        </div>
+        <div id="algo-trail-field" style="display:none">
+          <label class="form-label">Trailing SL Points</label>
+          <input id="algo-trail" class="form-input" type="number" step="0.05" placeholder="0.00">
         </div>
         <div style="grid-column:1/-1;display:flex;gap:8px;justify-content:flex-end;padding-top:4px">
           <button class="btn btn-ghost" onclick="Orders.resetForm()">Clear</button>
@@ -77,15 +92,16 @@
         <div class="card-title">Order Book</div>
         <div style="display:flex;gap:12px;align-items:center">
           <div class="tabs" style="display:flex;gap:4px;background:var(--bg-hover);padding:4px;border-radius:4px">
-            <button id="tab-open" class="btn btn-sm" style="background:var(--bg-card)" onclick="Orders.setTab('open')">Open Orders</button>
-            <button id="tab-history" class="btn btn-sm btn-ghost" onclick="Orders.setTab('history')">History</button>
+            <button id="tab-broker" class="btn btn-sm" style="background:var(--bg-card)" onclick="Orders.setTab('broker')">Live Broker Orders</button>
+            <button id="tab-pending" class="btn btn-sm btn-ghost" onclick="Orders.setTab('pending')">Pending Algos (Placed)</button>
+            <button id="tab-executed" class="btn btn-sm btn-ghost" onclick="Orders.setTab('executed')">Executed Algos</button>
           </div>
           <span class="badge badge-amber" style="font-size:10px">Auto-refresh 5s</span>
         </div>
       </div>
       <div class="table-wrap">
-        <table>
-          <thead>
+        <table id="orderbook-table">
+          <thead id="orderbook-thead">
             <tr>
               <th>Symbol</th>
               <th>Side</th>

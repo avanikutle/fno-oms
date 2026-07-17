@@ -14,8 +14,8 @@ const Connectivity = {
   },
 
   async login(broker) {
-    const totp = prompt(`Enter TOTP for ${broker} (leave blank if none):`);
-    if (totp === null) return; // User cancelled
+    const totpInput = document.getElementById('totp-' + broker);
+    const totp = totpInput ? totpInput.value.trim() : '';
 
     try {
       Toast.info(`Logging into ${broker}...`);
@@ -42,7 +42,7 @@ const Connectivity = {
     const sub    = document.getElementById('connectivity-subtitle');
     const lastRun= document.getElementById('connectivity-last-run');
 
-    if (tbody) tbody.innerHTML = `<tr><td colspan="5" style="padding:24px;text-align:center">
+    if (tbody) tbody.innerHTML = `<tr><td colspan="6" style="padding:24px;text-align:center">
       <div style="display:inline-flex;gap:8px;align-items:center;color:var(--text-muted)">
         <div class="spin"></div> Testing brokers…
       </div></td></tr>`;
@@ -56,10 +56,8 @@ const Connectivity = {
       const brokers = Array.isArray(res.data) ? res.data : [];
 
       if (!brokers.length) {
-        if (tbody) tbody.innerHTML = `<tr><td colspan="5" style="padding:32px;text-align:center;color:var(--text-muted)">
-          No brokers configured —
-          <a onclick="navigate('settings')" style="color:var(--amber);cursor:pointer">Go to Settings</a>
-          to add your first broker
+        if (tbody) tbody.innerHTML = `<tr><td colspan="6" style="padding:32px;text-align:center;color:var(--text-muted)">
+          No brokers configured in the backend.
         </td></tr>`;
         if (icon)  icon.textContent  = '🔌';
         if (title) title.textContent = 'No brokers configured';
@@ -81,7 +79,7 @@ const Connectivity = {
       if (lastRun) lastRun.textContent = 'Last tested: ' + new Date().toLocaleTimeString('en-IN');
 
     } catch (e) {
-      if (tbody) tbody.innerHTML = `<tr><td colspan="5" style="padding:24px;text-align:center;color:var(--text-red)">
+      if (tbody) tbody.innerHTML = `<tr><td colspan="6" style="padding:24px;text-align:center;color:var(--text-red)">
         ⚠ Test failed: ${escHtml(e.message)}</td></tr>`;
       if (icon)  icon.textContent  = '⚠️';
       if (title) title.textContent = 'Test failed';
@@ -112,13 +110,18 @@ const Connectivity = {
         <div style="font-size:11px;color:var(--text-muted)">${b.active ? '★ Active' : ''}</div>
       </td>
       <td style="font-family:monospace;font-size:12px;color:var(--text-muted)">
-        ${escHtml(b.endpoint || 'api.mstock.trade/openapi/typea')}
+        ${escHtml(b.endpoint || 'api.mstock.trade')}
+      </td>
+      <td>
+        <input type="text" id="totp-${b.brokerType}" class="form-input" placeholder="TOTP" style="width:100px;font-family:monospace;text-align:center" maxlength="6">
       </td>
       <td>${statusBadge}</td>
       <td>${latencyDisplay}</td>
-      <td style="font-size:11px;color:var(--text-muted)">${new Date().toLocaleTimeString('en-IN')}</td>
+      <td>
+        <button class="btn btn-sm btn-primary" onclick="Connectivity.login('${b.brokerType}')">Test/Login</button>
+      </td>
     </tr>
-    ${b.error ? `<tr><td colspan="5" style="padding:4px 12px 8px;font-size:11px;color:var(--text-red)">
+    ${b.error ? `<tr><td colspan="6" style="padding:4px 12px 8px;font-size:11px;color:var(--text-red)">
       ↳ ${escHtml(b.error)}</td></tr>` : ''}`;
   },
 
