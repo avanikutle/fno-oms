@@ -52,6 +52,14 @@
         <servlet-name>ConnectivityServlet</servlet-name>
         <servlet-class>com.fnooms.servlet.ConnectivityServlet</servlet-class>
     </servlet>
+    <servlet>
+        <servlet-name>InstrumentServlet</servlet-name>
+        <servlet-class>com.fnooms.servlet.InstrumentServlet</servlet-class>
+    </servlet>
+    <servlet>
+        <servlet-name>SettingsServlet</servlet-name>
+        <servlet-class>com.fnooms.servlet.SettingsServlet</servlet-class>
+    </servlet>
 
     <!-- ========== Servlet Mappings ========== -->
     <servlet-mapping>
@@ -81,6 +89,14 @@
     <servlet-mapping>
         <servlet-name>ConnectivityServlet</servlet-name>
         <url-pattern>/api/connectivity/*</url-pattern>
+    </servlet-mapping>
+    <servlet-mapping>
+        <servlet-name>InstrumentServlet</servlet-name>
+        <url-pattern>/api/instruments/search</url-pattern>
+    </servlet-mapping>
+    <servlet-mapping>
+        <servlet-name>SettingsServlet</servlet-name>
+        <url-pattern>/api/settings/*</url-pattern>
     </servlet-mapping>
 
     <!-- Static assets served by Tomcat's default servlet -->

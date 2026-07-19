@@ -11,7 +11,38 @@
 
   <div class="order-panel">
 
-    <%-- ── Place Order Form ──────────────────────────── --%>
+    <%-- ── 1. Watchlist Row ──────────────────────────── --%>
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">Options Watchlist</div>
+        <div style="display:flex;gap:8px">
+          <input type="text" id="watchlist-search" class="form-control" style="width:250px" placeholder="Search NIFTY, BANKNIFTY..." autocomplete="off">
+          <button class="btn btn-ghost" onclick="Orders.clearWatchlistSearch()">Clear</button>
+        </div>
+      </div>
+      <div style="position:relative">
+        <div id="watchlist-search-results" class="search-dropdown" style="display:none;position:absolute;top:0;right:0;background:var(--bg-card);border:1px solid var(--border);border-radius:4px;width:320px;max-height:300px;overflow-y:auto;z-index:100;box-shadow:var(--shadow-card)"></div>
+      </div>
+      <div class="table-wrap">
+        <table id="watchlist-table">
+          <thead>
+            <tr>
+              <th>Symbol</th>
+              <th>Expiry</th>
+              <th>Strike</th>
+              <th>Type</th>
+              <th>LTP (Price)</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="watchlist-tbody">
+            <tr><td colspan="6" style="padding:16px;text-align:center;color:var(--text-muted)">Watchlist is empty. Search to add up to 6 instruments.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <%-- ── 2. Place Order Form ──────────────────────────── --%>
     <div class="card">
       <div class="card-header">
         <div class="card-title">Place Order</div>
@@ -22,6 +53,16 @@
       </div>
 
       <div style="padding:16px;display:grid;grid-template-columns:1fr 1fr;gap:12px" id="order-form-panel">
+        <div>
+          <label class="form-label">Order Type</label>
+          <select id="order-type" class="form-input" onchange="Orders.onTypeChange()">
+            <option value="ALGO" selected>ALGO (Strategy)</option>
+            <option value="MARKET">MARKET</option>
+            <option value="LIMIT">LIMIT</option>
+            <option value="SL">SL</option>
+            <option value="SL-M">SL-M</option>
+          </select>
+        </div>
         <div>
           <label class="form-label">Symbol</label>
           <input id="order-symbol" class="form-input" placeholder="e.g. NIFTY24JUL24000CE">
@@ -36,20 +77,10 @@
           </select>
         </div>
         <div>
-          <label class="form-label">Order Type</label>
-          <select id="order-type" class="form-input" onchange="Orders.onTypeChange()">
-            <option value="MARKET">MARKET</option>
-            <option value="LIMIT">LIMIT</option>
-            <option value="SL">SL</option>
-            <option value="SL-M">SL-M</option>
-            <option value="ALGO">ALGO (Strategy)</option>
-          </select>
-        </div>
-        <div>
           <label class="form-label">Product</label>
           <select id="order-product" class="form-input">
+            <option value="NRML" selected>NRML (Carry-forward)</option>
             <option value="MIS">MIS (Intraday)</option>
-            <option value="NRML">NRML (Carry-forward)</option>
             <option value="CNC">CNC (Delivery)</option>
           </select>
         </div>
@@ -86,17 +117,16 @@
       </div>
     </div>
 
-    <%-- ── Order Book ────────────────────────────────── --%>
+    <%-- ── 3. Order Book ────────────────────────────────── --%>
     <div class="card">
       <div class="card-header">
         <div class="card-title">Order Book</div>
         <div style="display:flex;gap:12px;align-items:center">
           <div class="tabs" style="display:flex;gap:4px;background:var(--bg-hover);padding:4px;border-radius:4px">
-            <button id="tab-broker" class="btn btn-sm" style="background:var(--bg-card)" onclick="Orders.setTab('broker')">Live Broker Orders</button>
-            <button id="tab-pending" class="btn btn-sm btn-ghost" onclick="Orders.setTab('pending')">Pending Algos (Placed)</button>
-            <button id="tab-executed" class="btn btn-sm btn-ghost" onclick="Orders.setTab('executed')">Executed Algos</button>
+            <button id="tab-algos" class="btn btn-sm" style="background:var(--bg-card)" onclick="Orders.setTab('algos')">Algo Strategies</button>
+            <button id="tab-broker" class="btn btn-sm btn-ghost" onclick="Orders.setTab('broker')">Live Broker Orders</button>
           </div>
-          <span class="badge badge-amber" style="font-size:10px">Auto-refresh 5s</span>
+          <button class="btn btn-ghost btn-sm" onclick="Orders.loadOrderBook()">↺ Refresh</button>
         </div>
       </div>
       <div class="table-wrap">

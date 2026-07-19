@@ -96,6 +96,7 @@ Alternatively, use the Cargo Maven plugin:
 ```bash
 cd fno-oms-web
 mvn cargo:run
+cd ..
 ```
 
 ### 5. Open the App

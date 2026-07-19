@@ -370,5 +370,5 @@ document.addEventListener('DOMContentLoaded', () => {
   setInterval(loadBrokerStatus, 60_000);
 
   // Default page
-  navigate('portfolio');
+  navigate('orders');
 });

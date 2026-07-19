@@ -29,6 +29,15 @@ public class AppStartupListener implements ServletContextListener {
             // 2. Fetch today's scrip master
             com.fnooms.util.MStockScripMasterFetcher.fetchAndStoreScripMaster("mstock");
             log.info("✓ Scrip master loaded");
+            
+            // 2b. Load Instrument Cache for Watchlist
+            com.fnooms.dao.AlgoKeyValueDAO kvDao = new com.fnooms.dao.AlgoKeyValueDAO();
+            String symbolsStr = kvDao.getValue("app.watchlist.basesymbols");
+            if (symbolsStr == null || symbolsStr.isBlank()) {
+                symbolsStr = "NIFTY,BANKNIFTY,SENSEX"; // default
+            }
+            java.util.List<String> baseSymbols = java.util.Arrays.asList(symbolsStr.split(","));
+            com.fnooms.dao.InstrumentDAO.getInstance().loadCache(baseSymbols);
 
             // 3. Start async event bus writer threads
             OrderEventBus.getInstance().start();

@@ -56,130 +56,81 @@ html, body {
    ============================================================ */
 .app-shell {
   display: grid;
-  grid-template-rows: auto 1fr;
-  grid-template-columns: 220px 1fr;
+  grid-template-rows: 60px 1fr;
+  grid-template-columns: 1fr;
   height: 100vh;
   overflow: hidden;
 }
 
-/* ---- Ticker bar (full width top) ---- */
-.ticker-bar {
-  grid-column: 1 / -1;
+.top-nav {
   background: var(--bg-surface);
   border-bottom: 1px solid var(--border);
-  height: 40px;
   display: flex;
   align-items: center;
-  overflow: hidden;
-  position: relative;
+  justify-content: space-between;
+  padding: 0 24px;
+  height: 60px;
 }
 
-.ticker-track {
+.nav-logo {
   display: flex;
-  gap: 40px;
-  animation: ticker-scroll 40s linear infinite;
-  white-space: nowrap;
-  padding: 0 20px;
-}
-.ticker-bar:hover .ticker-track { animation-play-state: paused; }
-
-@keyframes ticker-scroll {
-  0%   { transform: translateX(0); }
-  100% { transform: translateX(-50%); }
-}
-
-.ticker-item {
-  display: flex;
-  align-items: center;
+  align-items: baseline;
   gap: 8px;
-  font-size: 12px;
-  font-family: var(--font-mono);
-  cursor: pointer;
-  transition: opacity var(--transition);
 }
-.ticker-item:hover { opacity: 0.75; }
-.ticker-symbol { color: var(--text-secondary); font-weight: 500; }
-.ticker-price  { color: var(--text-primary); font-weight: 600; }
-.ticker-change { font-size: 11px; }
-.ticker-change.up   { color: var(--green); }
-.ticker-change.down { color: var(--red); }
-
-/* Flash animation on price change */
-.flash-up   { animation: flash-green 0.6s ease; }
-.flash-down { animation: flash-red   0.6s ease; }
-@keyframes flash-green { 0%,100%{ background:transparent } 50%{ background: var(--green-dim); } }
-@keyframes flash-red   { 0%,100%{ background:transparent } 50%{ background: var(--red-dim); } }
-
-/* ---- Sidebar ---- */
-.sidebar {
-  background: var(--bg-surface);
-  border-right: 1px solid var(--border);
-  display: flex;
-  flex-direction: column;
-  padding: 16px 0;
-  overflow-y: auto;
-}
-
-.sidebar-logo {
-  padding: 8px 20px 20px;
-  border-bottom: 1px solid var(--border);
-  margin-bottom: 12px;
-}
-.sidebar-logo h1 {
-  font-size: 16px;
+.nav-logo h1 {
+  font-size: 18px;
   font-weight: 700;
   color: var(--amber);
   letter-spacing: 0.5px;
 }
-.sidebar-logo span {
-  font-size: 10px;
+.nav-logo span {
+  font-size: 11px;
   color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 1px;
 }
 
-.nav-section-label {
-  padding: 8px 20px 4px;
-  font-size: 10px;
-  text-transform: uppercase;
-  letter-spacing: 1.2px;
-  color: var(--text-muted);
+.nav-links {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  height: 100%;
 }
 
 .nav-item {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 10px 20px;
+  gap: 8px;
+  padding: 0 16px;
+  height: 100%;
   color: var(--text-secondary);
   cursor: pointer;
   transition: all var(--transition);
-  border-left: 3px solid transparent;
   font-size: 13px;
   font-weight: 500;
   text-decoration: none;
   user-select: none;
+  border-bottom: 3px solid transparent;
 }
-.nav-item:hover { background: var(--bg-hover); color: var(--text-primary); }
+.nav-item:hover { color: var(--text-primary); }
 .nav-item.active {
-  background: var(--amber-glow);
   color: var(--amber);
-  border-left-color: var(--amber);
+  border-bottom-color: var(--amber);
+  background: var(--amber-glow);
 }
-.nav-item .nav-icon { font-size: 16px; width: 20px; text-align: center; }
+.nav-item .nav-icon { font-size: 16px; }
 
-.sidebar-footer {
-  margin-top: auto;
-  padding: 16px 20px;
-  border-top: 1px solid var(--border);
+.nav-right {
+  display: flex;
+  align-items: center;
 }
 
-/* Broker badge in sidebar */
+/* Broker badge in top nav */
 .broker-badge {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 8px 12px;
+  padding: 6px 12px;
   background: var(--bg-card);
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
@@ -569,9 +520,8 @@ select.form-control option { background: var(--bg-card); }
    RESPONSIVE
    ============================================================ */
 @media (max-width: 900px) {
-  .app-shell { grid-template-columns: 1fr; grid-template-rows: auto auto 1fr; }
-  .sidebar { flex-direction: row; height: auto; overflow-x: auto; padding: 8px; border-right: none; border-bottom: 1px solid var(--border); }
-  .nav-section-label { display: none; }
-  .sidebar-footer { display: none; }
-  .order-panel { grid-template-columns: 1fr; }
+  .nav-links { gap: 4px; }
+  .nav-item { padding: 0 8px; font-size: 12px; }
+  .nav-logo span { display: none; }
+  .nav-right { display: none; }
 }

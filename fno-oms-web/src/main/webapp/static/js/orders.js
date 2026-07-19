@@ -8,7 +8,9 @@ const Orders = {
   refreshTimer: null,
   allOrders: [],
   allAlgos: [],
-  currentTab: 'broker',
+  currentTab: 'algos',
+  watchlist: [],
+  searchTimeout: null,
 
   load() {
     // Only render dynamic form if JSP static form is not present
@@ -17,15 +19,15 @@ const Orders = {
     } else {
       this.initJspForm();
     }
+    this.initWatchlist();
     this.loadOrderBook();
-    if (this.orderBookTimer) clearInterval(this.orderBookTimer);
-    this.orderBookTimer = setInterval(() => this.loadOrderBook(), 5000);
   },
 
   // Initialise the static JSP form on first load
   initJspForm() {
     this.setSide('BUY');
     this.onTypeChange();
+    this.setTab('algos');
   },
 
   // Called by JSP BUY/SELL buttons
@@ -101,9 +103,43 @@ const Orders = {
         trailing_sl_points: parseFloat(document.getElementById('algo-trail')?.value) || 0,
       };
       
+      
       if (!body.symbol)       { Toast.error('Validation', 'Symbol is required'); return; }
       if (body.quantity <= 0) { Toast.error('Validation', 'Enter a valid quantity'); return; }
       if (body.entry_price <= 0) { Toast.error('Validation', 'Enter entry price'); return; }
+      
+      // Default Target & SL to 5% if not provided
+      if (body.target_price <= 0) {
+        body.target_price = side === 'BUY' ? body.entry_price * 1.05 : body.entry_price * 0.95;
+      }
+      if (body.stop_loss <= 0) {
+        body.stop_loss = side === 'BUY' ? body.entry_price * 0.95 : body.entry_price * 1.05;
+      }
+
+      // Format to 2 decimal places to avoid floating point issues
+      body.target_price = parseFloat(body.target_price.toFixed(2));
+      body.stop_loss = parseFloat(body.stop_loss.toFixed(2));
+
+      // Validation logic
+      if (side === 'BUY') {
+        if (body.target_price <= body.entry_price) {
+          Toast.error('Validation', 'For BUY orders, Target Price must be greater than Entry Price');
+          return;
+        }
+        if (body.stop_loss >= body.entry_price) {
+          Toast.error('Validation', 'For BUY orders, Stop Loss must be less than Entry Price');
+          return;
+        }
+      } else { // SELL
+        if (body.target_price >= body.entry_price) {
+          Toast.error('Validation', 'For SELL orders, Target Price must be less than Entry Price');
+          return;
+        }
+        if (body.stop_loss <= body.entry_price) {
+          Toast.error('Validation', 'For SELL orders, Stop Loss must be greater than Entry Price');
+          return;
+        }
+      }
       
       try {
         const result = await API.post('/api/strategies/add', body);
@@ -142,6 +178,161 @@ const Orders = {
       } catch(e) { Toast.error('Network Error', e.message); }
     }
   },
+
+  // --- Watchlist Logic ---
+
+  initWatchlist() {
+    const saved = localStorage.getItem('fno_watchlist');
+    if (saved) {
+      try { this.watchlist = JSON.parse(saved); } catch (e) { this.watchlist = []; }
+    }
+    this.renderWatchlist();
+    this.refreshWatchlistPrices();
+
+    const searchInput = document.getElementById('watchlist-search');
+    if (searchInput) {
+      searchInput.addEventListener('input', (e) => {
+        clearTimeout(this.searchTimeout);
+        const val = e.target.value.trim();
+        this.searchTimeout = setTimeout(() => this.searchInstruments(val), 300);
+      });
+      searchInput.addEventListener('focus', (e) => {
+        const val = e.target.value.trim();
+        if (val.length === 0) {
+           this.searchInstruments('');
+        }
+      });
+    }
+  },
+
+  async searchInstruments(query) {
+    const resBox = document.getElementById('watchlist-search-results');
+    try {
+      const result = await API.get('/api/instruments/search?q=' + encodeURIComponent(query));
+      if (result.success && result.data.length > 0) {
+        resBox.innerHTML = result.data.map(item => `
+          <div style="padding:10px;border-bottom:1px solid var(--border);cursor:pointer;display:flex;justify-content:space-between;align-items:center" 
+               onclick="Orders.addToWatchlist('${encodeURIComponent(JSON.stringify(item))}')">
+            <div>
+              <div style="font-weight:600">${item.symbol}</div>
+              <div style="font-size:11px;color:var(--text-muted)">${item.expiry} | Strike: ${item.strike} ${item.type}</div>
+            </div>
+            <span class="nav-icon" style="color:var(--amber)">+</span>
+          </div>
+        `).join('');
+        resBox.style.display = 'block';
+      } else {
+        resBox.innerHTML = `<div style="padding:10px;color:var(--text-muted)">No results found.</div>`;
+        resBox.style.display = 'block';
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  },
+
+  clearWatchlistSearch() {
+    const s = document.getElementById('watchlist-search');
+    if (s) s.value = '';
+    const resBox = document.getElementById('watchlist-search-results');
+    if (resBox) resBox.style.display = 'none';
+  },
+
+  addToWatchlist(itemStr) {
+    if (this.watchlist.length >= 6) {
+      Toast.error('Watchlist Full', 'You can only add up to 6 instruments to the watchlist.');
+      return;
+    }
+    try {
+      const item = JSON.parse(decodeURIComponent(itemStr));
+      if (!this.watchlist.find(x => x.token === item.token)) {
+        item.ltp = 0; // initialize
+        this.watchlist.push(item);
+        this.saveWatchlist();
+        this.renderWatchlist();
+        this.refreshWatchlistPrices();
+      }
+      this.clearWatchlistSearch();
+    } catch(e) { console.error(e); }
+  },
+
+  removeFromWatchlist(token) {
+    this.watchlist = this.watchlist.filter(x => x.token !== token);
+    this.saveWatchlist();
+    this.renderWatchlist();
+  },
+
+  saveWatchlist() {
+    localStorage.setItem('fno_watchlist', JSON.stringify(this.watchlist));
+  },
+
+  renderWatchlist() {
+    const tbody = document.getElementById('watchlist-tbody');
+    if (!tbody) return;
+    
+    if (this.watchlist.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="6" style="padding:16px;text-align:center;color:var(--text-muted)">Watchlist is empty. Search to add up to 6 instruments.</td></tr>`;
+      return;
+    }
+
+    tbody.innerHTML = this.watchlist.map(item => `
+      <tr style="cursor:pointer" onclick="Orders.prefillFromWatchlist('${item.symbol}', '${item.exchange}', ${item.ltp})">
+        <td style="font-weight:600;color:var(--text-primary)">${escHtml(item.symbol)}</td>
+        <td>${item.expiry}</td>
+        <td>${item.strike}</td>
+        <td><span class="badge ${item.type === 'CE' ? 'badge-green' : 'badge-red'}">${item.type}</span></td>
+        <td style="font-family:var(--font-mono);font-weight:600" id="wl-price-${item.token}">${item.ltp > 0 ? fmt(item.ltp) : '—'}</td>
+        <td>
+          <button class="btn btn-icon btn-ghost" onclick="event.stopPropagation(); Orders.removeFromWatchlist('${item.token}')">×</button>
+        </td>
+      </tr>
+    `).join('');
+  },
+
+  async refreshWatchlistPrices() {
+    if (this.watchlist.length === 0) return;
+    
+    const symbols = this.watchlist.map(i => i.exchange + ':' + i.symbol).join(',');
+    try {
+      const res = await API.get('/api/quote?symbols=' + encodeURIComponent(symbols));
+      if (res.success && res.data) {
+        this.watchlist.forEach(item => {
+          const key = item.exchange + ':' + item.symbol;
+          if (res.data[key]) {
+            item.ltp = res.data[key].ltp;
+            const priceTd = document.getElementById('wl-price-' + item.token);
+            if (priceTd) priceTd.textContent = fmt(item.ltp);
+          }
+        });
+        this.saveWatchlist();
+      }
+    } catch(e) {
+      console.error('Failed to fetch watchlist prices', e);
+    }
+  },
+
+  prefillFromWatchlist(symbol, exchange, ltp) {
+    const ex = document.getElementById('order-exchange'); if (ex) ex.value = exchange || 'NFO';
+    const sy = document.getElementById('order-symbol');   if (sy) sy.value = symbol;
+    
+    // For ALGO type, we could optionally set entry price = LTP
+    const typeEl = document.getElementById('order-type');
+    if (typeEl && typeEl.value === 'ALGO' && ltp > 0) {
+       const pr = document.getElementById('order-price');
+       if (pr) pr.value = ltp;
+    }
+    
+    // Scroll down to the order panel slightly for UX
+    const formPanel = document.getElementById('order-form-panel');
+    if (formPanel) {
+        formPanel.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        // briefly highlight it
+        formPanel.style.transition = 'box-shadow 0.3s';
+        formPanel.style.boxShadow = '0 0 0 4px var(--amber-glow)';
+        setTimeout(() => { formPanel.style.boxShadow = 'none'; }, 1000);
+    }
+  },
+
+  // --- End Watchlist Logic ---
 
   prefill(symbol, side) {
     navigate('orders');
@@ -318,7 +509,7 @@ const Orders = {
 
   setTab(tab) {
     this.currentTab = tab;
-    ['broker', 'pending', 'executed'].forEach(t => {
+    ['broker', 'algos'].forEach(t => {
       const btn = document.getElementById('tab-' + t);
       if (btn) {
         btn.className = 'btn btn-sm ' + (tab === t ? '' : 'btn-ghost');
@@ -389,11 +580,10 @@ const Orders = {
       }).join('');
     } else {
         // ALGO Tabs
-        const isExecutedTab = this.currentTab === 'executed';
-        const filtered = this.allAlgos.filter(a => (a.state.entered === isExecutedTab));
+        const filtered = this.allAlgos;
         
         if (!filtered.length) {
-          el.innerHTML = `<tr><td colspan="9">${emptyState('⚙️', 'No algo strategies found', 'Check the other tab')}</td></tr>`;
+          el.innerHTML = `<tr><td colspan="9">${emptyState('⚙️', 'No algo strategies found', 'Place an algo order using the form')}</td></tr>`;
           return;
         }
         

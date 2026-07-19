@@ -18,40 +18,29 @@
 
 <div class="app-shell">
 
-  <!-- ══ TICKER BAR ══════════════════════════════════════════════ -->
-  <header class="ticker-bar">
-    <div class="ticker-track" id="ticker-track">
-      <div class="ticker-item">
-        <span class="ticker-symbol">NIFTY</span>
-        <span class="ticker-price">—</span>
-        <span class="ticker-change">Connecting…</span>
-      </div>
-    </div>
-  </header>
-
-  <!-- ══ SIDEBAR ════════════════════════════════════════════════ -->
-  <aside class="sidebar">
-    <div class="sidebar-logo">
+  <!-- ══ TOP NAVIGATION ════════════════════════════════════════════════ -->
+  <header class="top-nav">
+    <div class="nav-logo">
       <h1>FnO OMS</h1>
       <span>Options Trading</span>
     </div>
 
-    <span class="nav-section-label">Trading</span>
-    <a class="nav-item active" data-page="portfolio" id="nav-portfolio">
-      <span class="nav-icon">📊</span> Portfolio
-    </a>
+    <div class="nav-links">
+      <a class="nav-item" data-page="portfolio" id="nav-portfolio">
+        <span class="nav-icon">📊</span> Portfolio
+      </a>
+      <a class="nav-item active" data-page="orders" id="nav-orders">
+        <span class="nav-icon">📋</span> Orders
+      </a>
+      <a class="nav-item" data-page="connectivity" id="nav-connectivity">
+        <span class="nav-icon">🔌</span> Connectivity
+      </a>
+      <a class="nav-item" data-page="settings" id="nav-settings">
+        <span class="nav-icon">⚙️</span> Settings
+      </a>
+    </div>
 
-
-    <a class="nav-item" data-page="orders" id="nav-orders">
-      <span class="nav-icon">📋</span> Orders
-    </a>
-
-    <span class="nav-section-label" style="margin-top:8px">System</span>
-    <a class="nav-item" data-page="connectivity" id="nav-connectivity">
-      <span class="nav-icon">🔌</span> Connectivity
-    </a>
-
-    <div class="sidebar-footer">
+    <div class="nav-right">
       <div class="broker-badge">
         <div class="broker-dot" id="broker-dot"></div>
         <div>
@@ -60,7 +49,7 @@
         </div>
       </div>
     </div>
-  </aside>
+  </header>
 
   <!-- ══ MAIN CONTENT ═══════════════════════════════════════════ -->
   <main class="main-content">
@@ -70,7 +59,7 @@
 
     <jsp:include page="pages/orders.jsp"/>
     <jsp:include page="pages/connectivity.jsp"/>
-
+    <jsp:include page="pages/settings.jsp" />
   </main>
 </div>
 
