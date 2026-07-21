@@ -88,4 +88,18 @@ public class ScripMasterDAO {
         }
         return null;
     }
+
+    public String getSymbolByToken(String token) {
+        String sql = "SELECT symbol FROM angelone_scrip_master WHERE token = ?";
+        try (Connection c = DatabaseManager.getInstance().getConnection();
+             PreparedStatement ps = c.prepareStatement(sql)) {
+            ps.setString(1, token);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) return rs.getString("symbol");
+            }
+        } catch (SQLException e) {
+            log.error("Failed to query symbol for token: {}", token, e);
+        }
+        return null;
+    }
 }

@@ -46,8 +46,13 @@ public class QuoteServlet extends HttpServlet {
         } catch (IllegalStateException e) {
             JsonUtil.writeJson(resp, 503, JsonUtil.error(e.getMessage()));
         } catch (BrokerException e) {
-            log.warn("GetQuotes failed for {}: {}", instruments, e.getMessage());
-            JsonUtil.writeJson(resp, 502, JsonUtil.error(e.getMessage()));
+            if (e.getMessage() != null && e.getMessage().contains("404")) {
+                log.warn("GetQuotes 404 for {}: {}", instruments, e.getMessage());
+                JsonUtil.writeJson(resp, 200, JsonUtil.success(Collections.emptyMap()));
+            } else {
+                log.warn("GetQuotes failed for {}: {}", instruments, e.getMessage());
+                JsonUtil.writeJson(resp, 502, JsonUtil.error(e.getMessage()));
+            }
         }
     }
 }

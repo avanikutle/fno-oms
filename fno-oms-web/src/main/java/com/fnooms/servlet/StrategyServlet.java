@@ -13,6 +13,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -37,24 +38,33 @@ public class StrategyServlet extends HttpServlet {
                 JsonUtil.writeJson(resp, 200, JsonUtil.success(watchlist == null ? "" : watchlist));
             } else {
                 // Return all active strategies with their live state
+                String scripName = req.getParameter("scripName");
                 List<StrategyConfig> configs = StrategyConfigLoader.loadConfigs();
                 com.fnooms.dao.TradeStatusDAO tradeStatusDao = new com.fnooms.dao.TradeStatusDAO();
                 JsonArray resultArr = new JsonArray();
                 for (StrategyConfig config : configs) {
-                    TradeState state = tradeStatusDao.loadLatestState(config.getSymbol());
+                    if (scripName != null && !config.getSymbol().equals(scripName)) continue;
+                    
+                    TradeState state = tradeStatusDao.loadLatestState(config.getStrategyId());
                     JsonObject obj = new JsonObject();
-                    obj.add("config", JsonUtil.parseObject(JsonUtil.success(config).get("data").toString())); // Quick hack to serialize config to json object
+                    obj.addProperty("strategyId", config.getStrategyId());
+                    obj.addProperty("symbol", config.getSymbol());
+                    obj.addProperty("name", config.getSymbol());
                     
                     JsonObject stateObj = new JsonObject();
-                    stateObj.addProperty("entered", state.isEntered());
-                    stateObj.addProperty("exited", state.isExited());
-                    stateObj.addProperty("entryPrice", state.getEntryPrice());
-                    stateObj.addProperty("currentTarget", state.getCurrentTarget());
-                    stateObj.addProperty("currentStopLoss", state.getCurrentStopLoss());
-                    stateObj.addProperty("entryOrderId", state.getEntryOrderId());
-                    stateObj.addProperty("exitOrderId", state.getExitOrderId());
+                    stateObj.addProperty("entered", state != null && state.isEntered());
+                    stateObj.addProperty("exited", state != null && state.isExited());
+                    stateObj.addProperty("entryPrice", state != null ? state.getEntryPrice() : 0.0);
+                    stateObj.addProperty("currentTarget", state != null ? state.getCurrentTarget() : 0.0);
+                    stateObj.addProperty("currentStopLoss", state != null ? state.getCurrentStopLoss() : 0.0);
+                    stateObj.addProperty("entryOrderId", state != null ? state.getEntryOrderId() : "");
+                    stateObj.addProperty("exitOrderId", state != null ? state.getExitOrderId() : "");
                     
                     obj.add("state", stateObj);
+                    
+                    // Add config object for UI
+                    obj.add("config", new com.google.gson.Gson().toJsonTree(config));
+                    
                     resultArr.add(obj);
                 }
                 
@@ -109,10 +119,9 @@ public class StrategyServlet extends HttpServlet {
                 
                 // Insert into DB
                 String sql = "INSERT INTO strategies (scrip_name, exchange_id, name, entry_price, target_price, stop_loss, trailing_sl_points, quantity, transaction_type, entry_condition, product, is_active) " +
-                             "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) " +
-                             "ON CONFLICT(scrip_name) DO UPDATE SET " +
-                             "entry_price=EXCLUDED.entry_price, target_price=EXCLUDED.target_price, stop_loss=EXCLUDED.stop_loss, trailing_sl_points=EXCLUDED.trailing_sl_points, quantity=EXCLUDED.quantity;";
+                             "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id";
                              
+                Long newStrategyId = null;
                 try (Connection conn = DatabaseManager.getInstance().getConnection();
                      PreparedStatement pstmt = conn.prepareStatement(sql)) {
                     pstmt.setString(1, symbol);
@@ -127,7 +136,12 @@ public class StrategyServlet extends HttpServlet {
                     pstmt.setString(10, condition);
                     pstmt.setString(11, product);
                     pstmt.setBoolean(12, true); // is_active
-                    pstmt.executeUpdate();
+                    
+                    try (ResultSet rs = pstmt.executeQuery()) {
+                        if (rs.next()) {
+                            newStrategyId = rs.getLong(1);
+                        }
+                    }
                 }
 
                 // Hydrate the config to memory
@@ -135,6 +149,7 @@ public class StrategyServlet extends HttpServlet {
                 ScripMasterService.getInstance().initActiveTokens(list);
 
                 StrategyConfig config = new StrategyConfig();
+                config.setStrategyId(newStrategyId);
                 config.setSymbol(symbol);
                 config.setExchange(exchange);
                 config.setEntryPrice(entryPrice);
@@ -149,9 +164,6 @@ public class StrategyServlet extends HttpServlet {
                 StrategyEngine engine = AlgoManager.getInstance().getEngine();
                 if (engine != null) {
                     engine.addConfig(config);
-                    // reset state automatically for new config
-                    kvDao.setValue("state." + symbol + ".entered", "false");
-                    kvDao.setValue("state." + symbol + ".exited", "false");
                 }
                 
                 MarketDataListener listener = AlgoManager.getInstance().getListener();
@@ -162,15 +174,49 @@ public class StrategyServlet extends HttpServlet {
                 JsonUtil.writeJson(resp, 200, JsonUtil.success("Strategy added successfully"));
                 
             } else if ("/reset".equals(path)) {
-                String symbol = json.get("symbol").getAsString();
-                kvDao.setValue("state." + symbol + ".entered", "false");
-                kvDao.setValue("state." + symbol + ".exited", "false");
-                JsonUtil.writeJson(resp, 200, JsonUtil.success("Strategy state reset for " + symbol));
+                // Not supported for id based strategies for now
+                JsonUtil.writeJson(resp, 200, JsonUtil.success("Strategy reset not applicable"));
             } else {
                 JsonUtil.writeJson(resp, 404, JsonUtil.error("Not found"));
             }
         } catch (Exception e) {
             log.error("Error in StrategyServlet POST", e);
+            JsonUtil.writeJson(resp, 500, JsonUtil.error(e.getMessage()));
+        }
+    }
+
+    @Override
+    protected void doDelete(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+        String path = req.getPathInfo();
+        if (path == null || path.length() <= 1) {
+            JsonUtil.writeJson(resp, 400, JsonUtil.error("Missing strategy id in path"));
+            return;
+        }
+        
+        Long strategyId;
+        try {
+            strategyId = Long.parseLong(path.substring(1));
+        } catch (NumberFormatException e) {
+            JsonUtil.writeJson(resp, 400, JsonUtil.error("Invalid strategy id"));
+            return;
+        }
+
+        try {
+            String sql = "UPDATE strategies SET is_active = false WHERE id = ?";
+            try (Connection conn = DatabaseManager.getInstance().getConnection();
+                 PreparedStatement pstmt = conn.prepareStatement(sql)) {
+                pstmt.setLong(1, strategyId);
+                pstmt.executeUpdate();
+            }
+            
+            StrategyEngine engine = AlgoManager.getInstance().getEngine();
+            if (engine != null) {
+                engine.removeConfig(strategyId);
+            }
+            
+            JsonUtil.writeJson(resp, 200, JsonUtil.success("Strategy deleted successfully"));
+        } catch (Exception e) {
+            log.error("Error deleting strategy for id {}", strategyId, e);
             JsonUtil.writeJson(resp, 500, JsonUtil.error(e.getMessage()));
         }
     }

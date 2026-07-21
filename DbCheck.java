@@ -12,9 +12,9 @@ public class DbCheck {
         
         try (Connection conn = DriverManager.getConnection(url, user, pass)) {
             try (Statement stmt = conn.createStatement()) {
-                ResultSet rs = stmt.executeQuery("SELECT key_name, key_value FROM algo_key_value WHERE key_name LIKE '%mstock2%'");
+                ResultSet rs = stmt.executeQuery("SELECT instrument_token, tradingsymbol FROM mstock_scrip_master WHERE tradingsymbol LIKE 'NIFTY2680418900%' LIMIT 5");
                 while (rs.next()) {
-                    System.out.println(rs.getString("key_name") + " = " + rs.getString("key_value"));
+                    System.out.println(rs.getString("instrument_token") + " -> " + rs.getString("tradingsymbol"));
                 }
             }
         }

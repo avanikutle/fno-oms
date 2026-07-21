@@ -16,7 +16,7 @@ public class StrategyConfigLoader {
         List<StrategyConfig> configs = new ArrayList<>();
         List<String> activeSymbols = new ArrayList<>();
 
-        String sql = "SELECT scrip_name, exchange_id, name, entry_price, stop_loss, target_price, quantity, transaction_type, entry_condition, product, trailing_sl_points FROM strategies";
+        String sql = "SELECT id, scrip_name, exchange_id, name, entry_price, stop_loss, target_price, quantity, transaction_type, entry_condition, product, trailing_sl_points FROM strategies WHERE is_active = true";
 
         try (Connection conn = DatabaseManager.getInstance().getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql);
@@ -24,6 +24,7 @@ public class StrategyConfigLoader {
 
             while (rs.next()) {
                 StrategyConfig config = new StrategyConfig();
+                config.setStrategyId(rs.getLong("id"));
                 String symbol = rs.getString("scrip_name");
                 config.setSymbol(symbol);
                 activeSymbols.add(symbol);

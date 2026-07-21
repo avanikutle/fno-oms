@@ -60,6 +60,10 @@
         <servlet-name>SettingsServlet</servlet-name>
         <servlet-class>com.fnooms.servlet.SettingsServlet</servlet-class>
     </servlet>
+    <servlet>
+        <servlet-name>StrategyServlet</servlet-name>
+        <servlet-class>com.fnooms.servlet.StrategyServlet</servlet-class>
+    </servlet>
 
     <!-- ========== Servlet Mappings ========== -->
     <servlet-mapping>
@@ -97,6 +101,10 @@
     <servlet-mapping>
         <servlet-name>SettingsServlet</servlet-name>
         <url-pattern>/api/settings/*</url-pattern>
+    </servlet-mapping>
+    <servlet-mapping>
+        <servlet-name>StrategyServlet</servlet-name>
+        <url-pattern>/api/strategies/*</url-pattern>
     </servlet-mapping>
 
     <!-- Static assets served by Tomcat's default servlet -->

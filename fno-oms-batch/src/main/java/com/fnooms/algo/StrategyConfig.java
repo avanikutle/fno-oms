@@ -21,7 +21,10 @@ public class StrategyConfig {
     
     private EntryCondition entryCondition;
 
-    // Getters and Setters
+    private Long strategyId;
+
+    public Long getStrategyId() { return strategyId; }
+    public void setStrategyId(Long strategyId) { this.strategyId = strategyId; }
 
     public String getExchange() { return exchange; }
     public void setExchange(String exchange) { this.exchange = exchange; }

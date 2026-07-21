@@ -11,28 +11,24 @@ public class TradeStatusDAO {
     private static final Logger log = LoggerFactory.getLogger(TradeStatusDAO.class);
 
     /**
-     * Loads the latest state for the given symbol for today.
+     * Loads the latest state for the given strategyId for today.
      * If no active record exists, returns a clean new TradeState.
      */
-    public TradeState loadLatestState(String symbol) {
+    public TradeState loadLatestState(Long strategyId) {
         String sql = "SELECT id, entered, exited, entry_price, current_target, current_stop_loss, entry_order_id, exit_order_id " +
-                     "FROM trade_status WHERE biz_date = CURRENT_DATE AND symbol = ? ORDER BY id DESC LIMIT 1";
+                     "FROM trade_status WHERE biz_date = CURRENT_DATE AND strategy_id = ? ORDER BY id DESC LIMIT 1";
 
         TradeState state = new TradeState();
 
         try (Connection conn = DatabaseManager.getInstance().getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
-            pstmt.setString(1, symbol);
+            pstmt.setLong(1, strategyId);
             try (ResultSet rs = pstmt.executeQuery()) {
                 if (rs.next()) {
                     boolean exited = rs.getBoolean("exited");
-                    if (exited) {
-                        // The last trade exited, so we return a fresh state for a potential new entry today
-                        return state;
-                    }
-
-                    // Load ongoing trade
+                    
+                    // Load ongoing or finished trade
                     state.setDbId(rs.getLong("id"));
                     state.setEntered(rs.getBoolean("entered"));
                     state.setExited(exited);
@@ -44,7 +40,7 @@ public class TradeStatusDAO {
                 }
             }
         } catch (Exception e) {
-            log.error("Error loading trade status for {}: {}", symbol, e.getMessage());
+            log.error("Error loading trade status for strategyId {}: {}", strategyId, e.getMessage());
         }
         return state;
     }
@@ -52,23 +48,25 @@ public class TradeStatusDAO {
     /**
      * Inserts a brand new trade status row (used on initial entry).
      */
-    public void saveNewState(String symbol, String exchangeToken, TradeState state, String comments) {
-        String sql = "INSERT INTO trade_status (symbol, exchange_token, entered, exited, entry_price, current_target, current_stop_loss, entry_order_id, exit_order_id, comments) " +
-                     "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id";
+    public void saveNewState(Long strategyId, String symbol, String exchangeToken, TradeState state, String comments, String brokerType) {
+        String sql = "INSERT INTO trade_status (strategy_id, symbol, exchange_token, entered, exited, entry_price, current_target, current_stop_loss, entry_order_id, exit_order_id, comments, broker_type) " +
+                     "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id";
 
         try (Connection conn = DatabaseManager.getInstance().getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
-            pstmt.setString(1, symbol);
-            pstmt.setString(2, exchangeToken);
-            pstmt.setBoolean(3, state.isEntered());
-            pstmt.setBoolean(4, state.isExited());
-            pstmt.setDouble(5, state.getEntryPrice());
-            pstmt.setDouble(6, state.getCurrentTarget());
-            pstmt.setDouble(7, state.getCurrentStopLoss());
-            pstmt.setString(8, state.getEntryOrderId());
-            pstmt.setString(9, state.getExitOrderId());
-            pstmt.setString(10, comments);
+            pstmt.setLong(1, strategyId);
+            pstmt.setString(2, symbol);
+            pstmt.setString(3, exchangeToken);
+            pstmt.setBoolean(4, state.isEntered());
+            pstmt.setBoolean(5, state.isExited());
+            pstmt.setDouble(6, state.getEntryPrice());
+            pstmt.setDouble(7, state.getCurrentTarget());
+            pstmt.setDouble(8, state.getCurrentStopLoss());
+            pstmt.setString(9, state.getEntryOrderId());
+            pstmt.setString(10, state.getExitOrderId());
+            pstmt.setString(11, comments);
+            pstmt.setString(12, brokerType);
 
             try (ResultSet rs = pstmt.executeQuery()) {
                 if (rs.next()) {
@@ -76,7 +74,7 @@ public class TradeStatusDAO {
                 }
             }
         } catch (Exception e) {
-            log.error("Error saving new trade status for {}: {}", symbol, e.getMessage());
+            log.error("Error saving new trade status for strategyId {}: {}", strategyId, e.getMessage());
         }
     }
 

@@ -33,7 +33,44 @@ public class QuoteService {
         BrokerClient client = BrokerClientFactory.getActiveClient();
         long start = System.currentTimeMillis();
 
-        Map<String, Quote> quotes = client.getQuotes(instruments);
+        Map<String, Quote> quotes = new java.util.HashMap<>();
+        try {
+            quotes = client.getQuotes(instruments);
+        } catch (BrokerException e) {
+            if (e.getMessage() != null && e.getMessage().contains("404")) {
+                log.warn("Broker getQuotes returned 404, falling back to cache");
+            } else {
+                throw e;
+            }
+        }
+
+        // Fallback to cache for missing quotes
+        com.fnooms.algo.StrategyEngine engine = com.fnooms.algo.AlgoManager.getInstance().getEngine();
+        com.fnooms.algo.MarketDataListener listener = com.fnooms.algo.AlgoManager.getInstance().getListener();
+
+        if (engine != null) {
+            Map<String, Double> lastPrices = engine.getLastPrices();
+            for (String inst : instruments) {
+                if (!quotes.containsKey(inst)) {
+                    String[] parts = inst.split(":", 2);
+                    String symbol = parts.length > 1 ? parts[1] : inst;
+                    String exchange = parts.length > 1 ? parts[0] : "";
+                    
+                    Double price = lastPrices.get(symbol);
+                    if (price != null) {
+                        Quote q = new Quote();
+                        q.setSymbol(symbol);
+                        q.setExchange(exchange);
+                        q.setLtp(java.math.BigDecimal.valueOf(price));
+                        quotes.put(inst, q);
+                    } else if (listener != null) {
+                        // Subscribe dynamically if not in cache
+                        listener.addSubscription(symbol);
+                    }
+                }
+            }
+        }
+
         long latency = System.currentTimeMillis() - start;
 
         // Async audit

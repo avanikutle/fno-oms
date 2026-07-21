@@ -69,9 +69,9 @@
 <!-- Scripts -->
 <script src="<%= ctx %>/static/js/app.js?v=2.3"></script>
 
-<script src="<%= ctx %>/static/js/orders.js?v=2.3"></script>
-<script src="<%= ctx %>/static/js/portfolio.js"></script>
-<script src="<%= ctx %>/static/js/connectivity.js"></script>
+<script src="<%= ctx %>/static/js/orders.js?v=2.4"></script>
+<script src="<%= ctx %>/static/js/portfolio.js?v=2.1"></script>
+<script src="<%= ctx %>/static/js/connectivity.js?v=2.1"></script>
 
 <script>
   document.querySelectorAll('.nav-item[data-page]').forEach(el => {

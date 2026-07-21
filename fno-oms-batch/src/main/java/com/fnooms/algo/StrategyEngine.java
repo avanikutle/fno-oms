@@ -3,6 +3,8 @@ package com.fnooms.algo;
 import com.fnooms.broker.dto.OrderRequest;
 import com.fnooms.broker.dto.OrderResponse;
 import com.fnooms.service.OrderService;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import org.slf4j.Logger;
@@ -15,10 +17,12 @@ public class StrategyEngine {
     private final com.fnooms.dao.AlgoKeyValueDAO kvDao;
     private final com.fnooms.dao.TradeStatusDAO tradeStatusDao;
     private final com.fnooms.dao.OrderDetailsDAO orderDetailsDao;
-    private final Map<String, StrategyConfig> configs = new ConcurrentHashMap<>();
-    private final Map<String, TradeState> states = new ConcurrentHashMap<>();
+    private final Map<String, List<StrategyConfig>> configsBySymbol = new ConcurrentHashMap<>();
+    private final Map<Long, TradeState> statesByStrategyId = new ConcurrentHashMap<>();
+    private final Map<String, Double> lastPrices = new ConcurrentHashMap<>();
 
-    public StrategyEngine(OrderService orderService, com.fnooms.dao.AlgoKeyValueDAO kvDao, com.fnooms.dao.TradeStatusDAO tradeStatusDao) {
+    public StrategyEngine(OrderService orderService, com.fnooms.dao.AlgoKeyValueDAO kvDao,
+            com.fnooms.dao.TradeStatusDAO tradeStatusDao) {
         this.orderService = orderService;
         this.kvDao = kvDao;
         this.tradeStatusDao = tradeStatusDao;
@@ -26,27 +30,53 @@ public class StrategyEngine {
     }
 
     public void addConfig(StrategyConfig config) {
-        configs.put(config.getSymbol(), config);
-        
-        TradeState state = tradeStatusDao.loadLatestState(config.getSymbol());
-        states.put(config.getSymbol(), state);
-        
-        log.info("Loaded strategy config for symbol: {}. State -> Entered: {}, Exited: {}", config.getSymbol(), state.isEntered(), state.isExited());
+        configsBySymbol.computeIfAbsent(config.getSymbol(), k -> new ArrayList<>()).add(config);
+
+        TradeState state = tradeStatusDao.loadLatestState(config.getStrategyId());
+        statesByStrategyId.put(config.getStrategyId(), state);
+
+        log.info("Loaded strategy config {} for symbol: {}. State -> Entered: {}, Exited: {}", config.getStrategyId(),
+                config.getSymbol(), state.isEntered(), state.isExited());
     }
 
-    public void resetState(String symbol) {
-        if (states.containsKey(symbol)) {
-            states.put(symbol, new TradeState());
-            log.info("Manually reset trade state for symbol (will create new DB row on next entry): {}", symbol);
+    public void removeConfig(Long strategyId) {
+        // find config by strategy id and remove it
+        for (List<StrategyConfig> list : configsBySymbol.values()) {
+            list.removeIf(c -> c.getStrategyId().equals(strategyId));
+        }
+        statesByStrategyId.remove(strategyId);
+        log.info("Removed strategy config for strategyId: {}", strategyId);
+    }
+
+    public TradeState getTradeState(Long strategyId) {
+        return statesByStrategyId.get(strategyId);
+    }
+
+    public Map<String, Double> getLastPrices() {
+        return lastPrices;
+    }
+
+    public void resetState(Long strategyId) {
+        if (statesByStrategyId.containsKey(strategyId)) {
+            statesByStrategyId.put(strategyId, new TradeState());
+            log.info("Manually reset trade state for strategyId: {}", strategyId);
         }
     }
 
     public void onPriceUpdate(String symbol, double currentPrice) {
-        StrategyConfig config = configs.get(symbol);
-        if (config == null)
+        lastPrices.put(symbol, currentPrice);
+        log.info("Price Update: {} :{}", symbol, currentPrice);
+        List<StrategyConfig> configs = configsBySymbol.get(symbol);
+        if (configs == null || configs.isEmpty())
             return; // No strategy for this symbol
 
-        TradeState state = states.get(symbol);
+        for (StrategyConfig config : configs) {
+            processConfigForPriceUpdate(config, symbol, currentPrice);
+        }
+    }
+
+    private void processConfigForPriceUpdate(StrategyConfig config, String symbol, double currentPrice) {
+        TradeState state = statesByStrategyId.get(config.getStrategyId());
 
         // If strategy has already finished (entered and exited), wait for manual reset.
         if (state.isExited()) {
@@ -69,14 +99,14 @@ public class StrategyEngine {
                         config.getEntryPrice());
                 // Save entry price before executing
                 state.setEntryPrice(currentPrice);
-                
+
                 // Determine target price
                 double target = config.getTargetPrice();
                 if (currentPrice > target) {
                     target = currentPrice + 5.0; // Overridden target if entry is already higher
                 }
                 state.setCurrentTarget(target);
-                
+
                 executeEntry(config, state);
             }
         } else {
@@ -97,16 +127,17 @@ public class StrategyEngine {
                 if (currentPrice >= state.getEntryPrice() + config.getTrailingSlPoints()) {
                     double newSl;
                     String trailMode = kvDao.getValue("algo.trailing.sl.mode"); // "step" or "continuous"
-                    
+
                     if ("step".equalsIgnoreCase(trailMode)) {
-                        int steps = (int) Math.floor((currentPrice - state.getEntryPrice()) / config.getTrailingSlPoints());
+                        int steps = (int) Math
+                                .floor((currentPrice - state.getEntryPrice()) / config.getTrailingSlPoints());
                         // Place SL at entryPrice initially, then step it up by trailingSlPoints
                         newSl = state.getEntryPrice() + (steps - 1) * config.getTrailingSlPoints();
                     } else {
                         // Strict continuous trailing by the difference
                         newSl = currentPrice - config.getTrailingSlPoints();
                     }
-                    
+
                     if (newSl > state.getCurrentStopLoss()) {
                         state.setCurrentStopLoss(newSl);
                         log.info("Trailing SL for {} updated to {}", symbol, newSl);
@@ -138,15 +169,20 @@ public class StrategyEngine {
             if (response != null && response.getBrokerOrderId() != null) {
                 state.setEntryOrderId(response.getBrokerOrderId());
                 state.setEntered(true);
-                
+
                 // Initial SL is strictly the configured stop loss until trailing kicks in
                 state.setCurrentStopLoss(config.getStopLossPrice());
-                
-                tradeStatusDao.saveNewState(config.getSymbol(), config.getToken(), state, "Entered Long Trade");
-                
+
+                String brokerType = kvDao.getValue("algo.orderBroker");
+                if (brokerType == null)
+                    brokerType = "MOCK"; // fallback
+                tradeStatusDao.saveNewState(config.getStrategyId(), config.getSymbol(), config.getToken(), state,
+                        "Entered Long Trade", brokerType);
+
                 // Insert to order_details
-                orderDetailsDao.insertEntry(config.getSymbol(), response.getBrokerOrderId(), config.getTransactionType(), state.getEntryPrice());
-                
+                orderDetailsDao.insertEntry(config.getSymbol(), response.getBrokerOrderId(),
+                        config.getTransactionType(), state.getEntryPrice(), brokerType);
+
                 log.info("Successfully entered trade for {}. OrderId: {}", config.getSymbol(),
                         response.getBrokerOrderId());
             } else {
@@ -176,10 +212,14 @@ public class StrategyEngine {
                 state.setExitOrderId(response.getBrokerOrderId());
                 state.setExited(true); // Prevents further entries until reset or next day
                 tradeStatusDao.updateState(config.getSymbol(), state, "Trade Exited");
-                
+
+                String brokerType = kvDao.getValue("algo.orderBroker");
+                if (brokerType == null)
+                    brokerType = "MOCK";
                 // Update order_details
-                orderDetailsDao.updateExit(config.getSymbol(), state.getEntryOrderId(), response.getBrokerOrderId(), exitPrice);
-                
+                orderDetailsDao.updateExit(config.getSymbol(), state.getEntryOrderId(), response.getBrokerOrderId(),
+                        exitPrice, brokerType);
+
                 log.info("Successfully exited trade for {}. OrderId: {}", config.getSymbol(),
                         response.getBrokerOrderId());
             } else {

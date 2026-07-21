@@ -299,11 +299,10 @@ const Orders = {
           const key = item.exchange + ':' + item.symbol;
           if (res.data[key]) {
             item.ltp = res.data[key].ltp;
-            const priceTd = document.getElementById('wl-price-' + item.token);
-            if (priceTd) priceTd.textContent = fmt(item.ltp);
           }
         });
         this.saveWatchlist();
+        this.renderWatchlist();
       }
     } catch(e) {
       console.error('Failed to fetch watchlist prices', e);
@@ -513,7 +512,8 @@ const Orders = {
       const btn = document.getElementById('tab-' + t);
       if (btn) {
         btn.className = 'btn btn-sm ' + (tab === t ? '' : 'btn-ghost');
-        btn.style.background = tab === t ? 'var(--bg-card)' : 'transparent';
+        btn.style.background = tab === t ? 'var(--amber)' : 'transparent';
+        btn.style.color = tab === t ? '#000' : 'var(--text-muted)';
       }
     });
     
@@ -548,7 +548,7 @@ const Orders = {
         el.innerHTML = this.allOrders.map(o => {
             const side  = (o.transactionType || '').toUpperCase();
         const stCls = ({'COMPLETE':'complete','O-Completed':'complete','OPEN':'open','O-Pending':'open','REJECTED':'rejected','CANCELLED':'cancelled','O-Cancelled':'cancelled'}[o.status] || '');
-        const isCancellable = (o.status && (o.status.toUpperCase().includes('OPEN') || o.status.toUpperCase().includes('PENDING')));
+        const isCancellable = (o.status && (o.status.toUpperCase().includes('OPEN') || o.status.toUpperCase().includes('PENDING') || o.status.toUpperCase().includes('WAITING')));
         const isCloseable   = (o.status && (o.status.toUpperCase().includes('COMPLETE') || o.status.toUpperCase().includes('EXECUTED')));
 
         let actions = '—';
@@ -588,8 +588,8 @@ const Orders = {
         }
         
         el.innerHTML = filtered.map(a => {
-            const c = a.config;
-            const s = a.state;
+            const c = a.config || {};
+            const s = a.state || {};
             const side = (c.transactionType || 'BUY').toUpperCase();
             const color = side === 'BUY' ? 'var(--green)' : 'var(--red)';
             
@@ -617,7 +617,7 @@ const Orders = {
                 </div>
               </td>
               <td>
-                 <!-- Action buttons could go here (e.g. Cancel) -->
+                 ${s.exited ? '<span style="color:var(--text-muted)">—</span>' : `<button class="btn btn-danger btn-sm btn-ghost" onclick="Orders.cancelStrategy(${c.strategyId})">Cancel</button>`}
               </td>
             </tr>`;
         }).join('');
@@ -633,6 +633,22 @@ const Orders = {
       this.loadOrderBook();
     } else {
       Toast.error('Cancel Failed', res.message || 'Unknown error');
+    }
+  },
+
+  async cancelStrategy(id) {
+    const confirmed = await Modal.confirm('Cancel Strategy', 'Cancel strategy ' + id + '?');
+    if (!confirmed) return;
+    try {
+        const res = await API.delete('/api/strategies/' + encodeURIComponent(id));
+        if (res.success || res.status === 'success') {
+          Toast.info('Strategy Cancelled', 'ID: ' + id);
+          this.loadOrderBook();
+        } else {
+          Toast.error('Cancel Failed', res.message || 'Unknown error');
+        }
+    } catch (e) {
+        Toast.error('Error', e.message);
     }
   },
 

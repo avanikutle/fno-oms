@@ -103,4 +103,24 @@ public class InstrumentDAO {
         }
         return results;
     }
+
+    public List<String> getAllTokens() {
+        List<String> tokens = new java.util.ArrayList<>();
+        for (JsonObject opt : cachedOptions) {
+            tokens.add(opt.get("token").getAsString());
+        }
+        return tokens;
+    }
+
+    public List<String> getAllSymbols() {
+        List<String> symbols = new java.util.ArrayList<>();
+        for (JsonObject opt : cachedOptions) {
+            symbols.add(opt.get("symbol").getAsString());
+        }
+        return symbols;
+    }
+
+    public List<JsonObject> getAllCachedOptions() {
+        return new java.util.ArrayList<>(cachedOptions);
+    }
 }

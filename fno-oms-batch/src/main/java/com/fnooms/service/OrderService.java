@@ -18,17 +18,18 @@ import org.slf4j.LoggerFactory;
 public class OrderService {
 
     private static final Logger log = LoggerFactory.getLogger(OrderService.class);
-    private final OrderDAO        orderDAO  = new OrderDAO();
+    private final OrderDAO orderDAO = new OrderDAO();
 
     public OrderResponse placeOrder(OrderRequest request) throws BrokerException {
-        return placeOrderInternal(request, BrokerClientFactory.getActiveClient());
+        String orderBroker = new com.fnooms.dao.AlgoKeyValueDAO().getValue("algo.orderBroker");
+        return placeOrder(request, orderBroker);
     }
 
     public OrderResponse placeOrder(OrderRequest request, String targetBrokerType) throws BrokerException {
         if (targetBrokerType == null || targetBrokerType.isEmpty()) {
-            return placeOrder(request);
+            targetBrokerType = "MOCK"; // fallback to default
         }
-        
+
         BrokerClient targetClient = BrokerClientFactory.getClientFor(targetBrokerType);
         if (targetClient == null) {
             log.warn("Broker type '{}' not found, falling back to active broker.", targetBrokerType);
@@ -61,13 +62,15 @@ public class OrderService {
 
         log.info("Order placed in {}ms: {} {} {} @ {} | brokerOrderId={}",
                 latency, request.getTransactionType(), request.getQuantity(),
-                request.getSymbol(), request.getPrice() != null ? request.getPrice() : "MARKET", response.getBrokerOrderId());
+                request.getSymbol(), request.getPrice() != null ? request.getPrice() : "MARKET",
+                response.getBrokerOrderId());
 
         return response;
     }
 
     public List<OrderResponse> getOrderBook() throws BrokerException {
-        BrokerClient client = BrokerClientFactory.getActiveClient();
+        String orderBroker = new com.fnooms.dao.AlgoKeyValueDAO().getValue("algo.orderBroker");
+        BrokerClient client = BrokerClientFactory.getClientFor(orderBroker != null ? orderBroker : "MSTOCK");
         List<OrderResponse> orders = client.getOrderBook();
 
         AuditEventBus.getInstance().publish(
@@ -86,7 +89,8 @@ public class OrderService {
     }
 
     public boolean cancelOrder(String brokerOrderId) throws BrokerException {
-        BrokerClient client = BrokerClientFactory.getActiveClient();
+        String orderBroker = new com.fnooms.dao.AlgoKeyValueDAO().getValue("algo.orderBroker");
+        BrokerClient client = BrokerClientFactory.getClientFor(orderBroker != null ? orderBroker : "MSTOCK");
         boolean result = client.cancelOrder(brokerOrderId);
 
         if (result) {

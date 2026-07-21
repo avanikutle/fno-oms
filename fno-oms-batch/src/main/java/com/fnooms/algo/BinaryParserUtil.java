@@ -32,10 +32,9 @@ public class BinaryParserUtil {
             long rawLtp = data.getLong();
             double ltp = rawLtp / 100.0;
 
-            String symbol = ScripMasterServiceProvider.getInstance("ANGELONE").getSymbol(tokenStr);
+            String symbol = ScripMasterServiceProvider.getInstance("MSTOCK").getSymbol(tokenStr);
 
             if (symbol != null) {
-                log.info("[MStock] Symbol: {}, Price:{}", symbol, ltp);
                 engine.onPriceUpdate(symbol, ltp);
             }
 

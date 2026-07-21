@@ -3,6 +3,20 @@
     "configurations": [
         {
             "type": "java",
+            "name": "MockServerMain",
+            "request": "launch",
+            "mainClass": "com.fnooms.algo.mock.MockServerMain",
+            "projectName": "fno-oms-batch"
+        },
+        {
+            "type": "java",
+            "name": "BrokerBenchmarkMain",
+            "request": "launch",
+            "mainClass": "com.fnooms.algo.benchmark.BrokerBenchmarkMain",
+            "projectName": "fno-oms-batch"
+        },
+        {
+            "type": "java",
             "name": "DhanLoginMain",
             "request": "launch",
             "mainClass": "com.fnooms.algo.login.DhanLoginMain",

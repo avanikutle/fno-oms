@@ -23,7 +23,7 @@ public class AlgoOrchestrator {
             kvDao.setValue("algo.feedBroker", "MSTOCK", "SYSTEM");
         }
         if (kvDao.getValue("algo.orderBroker") == null) {
-            kvDao.setValue("algo.orderBroker", "MSTOCK", "SYSTEM");
+            kvDao.setValue("algo.orderBroker", "MOCK", "SYSTEM");
         }
 
         String feedBroker = kvDao.getValue("algo.feedBroker");

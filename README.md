@@ -39,15 +39,16 @@ fno-oms-web (Tomcat 11 / Jakarta Servlets)
         |                        |
         v                        v
 fno-oms-batch (Standalone / Orchestrator)
-  AlgoOrchestrator · Broker Clients (mStock, AngelOne, Dhan)
-  WebSocket Listeners · Login Managers
+  AlgoOrchestrator · Login Managers
+  WebSocket Listeners
         |                  
         | HTTPS / WSS      
         v                        
 Broker APIs & Data Feeds
         |
-fno-oms-common (Core / DB)
+fno-oms-common (Core / DB / Brokers)
   DatabaseManager · AppConfig · DAO Layers
+  Broker Clients (mStock, AngelOne, Dhan)
   OrderEventBus · AuditEventBus · TickEventBus
         |
   PostgreSQL + TimescaleDB (Docker)

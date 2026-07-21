@@ -93,8 +93,7 @@ public class AngelOneDataListener implements MarketDataListener {
     @Override
     public void start() {
         if (configs.isEmpty()) {
-            log.error("AngelOneDataListener: No active strategies found to subscribe to.");
-            return;
+            log.warn("AngelOneDataListener: No active strategies found at startup. Will still connect for Watchlist.");
         }
 
         int count = 0;
@@ -138,6 +137,18 @@ public class AngelOneDataListener implements MarketDataListener {
                             String t = config.getToken();
                             if (t != null) {
                                 int exchType = getExchangeType(config.getExchange());
+                                tokensByExch.computeIfAbsent(exchType, k -> new java.util.ArrayList<>()).add(t);
+                            }
+                        }
+
+                        // Add all cached options
+                        for (com.google.gson.JsonObject opt : com.fnooms.dao.InstrumentDAO.getInstance().getAllCachedOptions()) {
+                            String t = opt.get("token").getAsString();
+                            String exchStr = opt.has("exchange") ? opt.get("exchange").getAsString() : "NFO";
+                            int exchType = getExchangeType(exchStr);
+                            
+                            boolean found = tokensByExch.values().stream().anyMatch(list -> list.contains(t));
+                            if (!found) {
                                 tokensByExch.computeIfAbsent(exchType, k -> new java.util.ArrayList<>()).add(t);
                             }
                         }

@@ -56,8 +56,7 @@ public class MstockDataListener implements MarketDataListener {
     @Override
     public void start() {
         if (configs.isEmpty()) {
-            log.error("MstockDataListener: No active strategies found to subscribe to.");
-            return;
+            log.warn("MstockDataListener: No active strategies found at startup. Will still connect for Watchlist.");
         }
 
         int count = 0;
@@ -94,11 +93,15 @@ public class MstockDataListener implements MarketDataListener {
                         // Send login message to maintain session
                         webSocket.sendText("LOGIN:" + CredsUtil.getJwtToken(brokerPrefix), true);
 
-                        // Build dynamic subscription payload based on configured tokens
+                        // Build dynamic subscription payload based on configured tokens and cached options
                         List<String> tokens = configs.stream()
                                 .map(StrategyConfig::getToken)
                                 .filter(t -> t != null)
-                                .collect(Collectors.toList());
+                                .collect(java.util.stream.Collectors.toList());
+                        
+                        tokens.addAll(com.fnooms.dao.InstrumentDAO.getInstance().getAllTokens());
+
+                        tokens = tokens.stream().distinct().collect(java.util.stream.Collectors.toList());
 
                         // Add watchlist tokens
                         com.fnooms.dao.AlgoKeyValueDAO dao = new com.fnooms.dao.AlgoKeyValueDAO();

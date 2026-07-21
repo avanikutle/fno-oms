@@ -189,6 +189,7 @@ CREATE TABLE IF NOT EXISTS order_details (
     id SERIAL PRIMARY KEY,
     business_date DATE NOT NULL DEFAULT CURRENT_DATE,
     order_source VARCHAR(50) NOT NULL DEFAULT 'ALGO', -- ALGO, BROKER_WEB
+    broker_type VARCHAR(50), -- MSTOCK, MOCK, ANGELONE
     transaction_type VARCHAR(10) NOT NULL, -- BUY, SELL
     symbol VARCHAR(100) NOT NULL,
     order_id VARCHAR(100),
@@ -289,6 +290,7 @@ CREATE TABLE IF NOT EXISTS trade_status (
     id SERIAL PRIMARY KEY,
     biz_date DATE NOT NULL DEFAULT CURRENT_DATE,
     symbol VARCHAR(100) NOT NULL,
+    broker_type VARCHAR(50), -- MSTOCK, MOCK, ANGELONE
     exchange_token VARCHAR(100), -- Unique across all brokers
     entered BOOLEAN DEFAULT FALSE,
     exited BOOLEAN DEFAULT FALSE,
