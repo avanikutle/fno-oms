@@ -22,7 +22,7 @@ import org.slf4j.LoggerFactory;
 
 public class AngelOneBrokerClient implements BrokerClient {
     private static final Logger log = LoggerFactory.getLogger(AngelOneBrokerClient.class);
-    private static final String API_BASE_URL = "https://apiconnect.angelbroking.com/rest/secure/angelbroking/portfolio/v1";
+    private static final String API_BASE_URL = "https://apiconnect.angelone.in/rest/secure/angelbroking/portfolio/v1";
     
     private final String prefix;
     private final OkHttpClient http;
