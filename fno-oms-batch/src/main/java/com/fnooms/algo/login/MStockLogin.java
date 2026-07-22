@@ -1,5 +1,6 @@
 package com.fnooms.algo.login;
 
+import com.fnooms.util.BrokerConfig;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
@@ -8,8 +9,8 @@ import okhttp3.*;
 
 public class MStockLogin implements BrokerLogin {
 
-    private static final String LOGIN_URL = "https://api.mstock.trade/openapi/typeb/connect/login";
-    private static final String VERIFY_TOTP_URL = "https://api.mstock.trade/openapi/typeb/session/verifytotp";
+    private static final String LOGIN_URL = BrokerConfig.getProperty("mstock.api.login", "https://api.mstock.trade/openapi/typeb/connect/login");
+    private static final String VERIFY_TOTP_URL = BrokerConfig.getProperty("mstock.api.verify_totp", "https://api.mstock.trade/openapi/typeb/session/verifytotp");
     private static final MediaType JSON = MediaType.get("application/json; charset=utf-8");
 
     private final OkHttpClient http = new OkHttpClient.Builder()

@@ -22,8 +22,14 @@ public class BrokerBenchmarkMain {
         System.out.println(String.format("%-15s | %-15s | %-12s | %-30s", "Broker", "Test Type", "Time (ms)", "Status"));
         System.out.println("-------------------------------------------------------------------------");
 
-        String[] brokers = {"MSTOCK", "DHAN", "ANGELONE", "MOCK"};
-
+        com.fnooms.dao.AlgoKeyValueDAO dao = new com.fnooms.dao.AlgoKeyValueDAO();
+        String brokerListStr = dao.getValue("broker.list.benchmark");
+        String[] brokers;
+        if (brokerListStr != null && !brokerListStr.trim().isEmpty()) {
+            brokers = brokerListStr.split("\\|");
+        } else {
+            brokers = new String[]{"MSTOCK", "DHAN", "ANGELONE", "MOCK"};
+        }
         for (String brokerName : brokers) {
             try {
                 BrokerClient client = BrokerClientFactory.getClientFor(brokerName);

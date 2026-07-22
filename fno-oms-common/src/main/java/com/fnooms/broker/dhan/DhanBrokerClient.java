@@ -65,12 +65,77 @@ public class DhanBrokerClient implements BrokerClient {
 
     @Override
     public List<Holding> getHoldings() throws BrokerException {
-        return new ArrayList<>(); // Stub for now
+        Request httpRequest = new Request.Builder()
+                .url(API_BASE_URL + "/holdings")
+                .get()
+                .header("access-token", accessToken)
+                .build();
+
+        try (Response response = http.newCall(httpRequest).execute()) {
+            String respStr = response.body() != null ? response.body().string() : "";
+            if (!response.isSuccessful()) {
+                throw new BrokerException("Dhan getHoldings failed: " + response.code() + " - " + respStr);
+            }
+            
+            List<Holding> holdings = new ArrayList<>();
+            JsonElement el = JsonParser.parseString(respStr);
+            JsonArray arr = el.isJsonArray() ? el.getAsJsonArray() : (el.isJsonObject() && el.getAsJsonObject().has("data") ? el.getAsJsonObject().getAsJsonArray("data") : null);
+            
+            if (arr != null) {
+                for (JsonElement item : arr) {
+                    JsonObject obj = item.getAsJsonObject();
+                    Holding h = new Holding();
+                    if (obj.has("tradingSymbol")) h.setSymbol(obj.get("tradingSymbol").getAsString());
+                    if (obj.has("totalQty")) h.setQuantity(obj.get("totalQty").getAsInt());
+                    if (obj.has("avgCostPrice")) h.setAveragePrice(obj.get("avgCostPrice").getAsBigDecimal());
+                    holdings.add(h);
+                }
+            }
+            return holdings;
+        } catch (IOException e) {
+            throw new BrokerException("Network error while fetching Dhan holdings", e);
+        }
     }
 
     @Override
     public List<com.fnooms.broker.dto.Position> getPositions() throws BrokerException {
-        return new ArrayList<>(); // Stub for now
+        Request httpRequest = new Request.Builder()
+                .url(API_BASE_URL + "/positions")
+                .get()
+                .header("access-token", accessToken)
+                .build();
+
+        try (Response response = http.newCall(httpRequest).execute()) {
+            String respStr = response.body() != null ? response.body().string() : "";
+            if (!response.isSuccessful()) {
+                throw new BrokerException("Dhan getPositions failed: " + response.code() + " - " + respStr);
+            }
+            
+            List<com.fnooms.broker.dto.Position> positions = new ArrayList<>();
+            JsonElement el = JsonParser.parseString(respStr);
+            JsonArray arr = el.isJsonArray() ? el.getAsJsonArray() : (el.isJsonObject() && el.getAsJsonObject().has("data") ? el.getAsJsonObject().getAsJsonArray("data") : null);
+            
+            if (arr != null) {
+                for (JsonElement item : arr) {
+                    JsonObject obj = item.getAsJsonObject();
+                    com.fnooms.broker.dto.Position p = new com.fnooms.broker.dto.Position();
+                    if (obj.has("tradingSymbol")) p.setSymbol(obj.get("tradingSymbol").getAsString());
+                    if (obj.has("netQty")) p.setQuantity(obj.get("netQty").getAsInt());
+                    if (obj.has("positionType")) p.setProduct(obj.get("positionType").getAsString());
+                    if (obj.has("realizedProfit")) {
+                        java.math.BigDecimal pnl = obj.get("realizedProfit").getAsBigDecimal();
+                        if (obj.has("unrealizedProfit")) {
+                            pnl = pnl.add(obj.get("unrealizedProfit").getAsBigDecimal());
+                        }
+                        p.setPnl(pnl);
+                    }
+                    positions.add(p);
+                }
+            }
+            return positions;
+        } catch (IOException e) {
+            throw new BrokerException("Network error while fetching Dhan positions", e);
+        }
     }
 
     @Override

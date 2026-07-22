@@ -311,3 +311,29 @@ CREATE INDEX IF NOT EXISTS idx_trade_status_lookup
 CREATE OR REPLACE TRIGGER trg_trade_status_updated_at
     BEFORE UPDATE ON trade_status
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+-- ============================================================
+-- Groww Scrip Master
+-- ============================================================
+CREATE TABLE IF NOT EXISTS groww_scrip_master (
+    id SERIAL PRIMARY KEY,
+    exchange VARCHAR(50),
+    exchange_token VARCHAR(50),
+    trading_symbol VARCHAR(100),
+    groww_symbol VARCHAR(100),
+    name VARCHAR(255),
+    instrument_type VARCHAR(50),
+    segment VARCHAR(50),
+    series VARCHAR(50),
+    isin VARCHAR(50),
+    lot_size INT,
+    expiry_date VARCHAR(50),
+    strike_price NUMERIC,
+    tick_size NUMERIC,
+    updated_by VARCHAR(50) DEFAULT 'SYSTEM',
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE OR REPLACE TRIGGER trg_groww_scrip_master_updated_at
+    BEFORE UPDATE ON groww_scrip_master
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();

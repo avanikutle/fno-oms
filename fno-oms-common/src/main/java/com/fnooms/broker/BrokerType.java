@@ -10,6 +10,7 @@ public enum BrokerType {
     DHAN("Dhan"),                   // Added Dhan integration
     ZERODHA("Zerodha Kite"),        // Future integration
     UPSTOX("Upstox"),               // Future integration
+    GROWW("Groww"),
     ANGEL("Angel One"),             // Future integration
     FYERS("Fyers");                 // Future integration
 

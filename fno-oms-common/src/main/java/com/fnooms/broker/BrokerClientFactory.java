@@ -44,6 +44,9 @@ public class BrokerClientFactory {
         } else if (prefix.startsWith("dhan")) {
             log.debug("Creating DhanBrokerClient for prefix {}", prefix);
             return new com.fnooms.broker.dhan.DhanBrokerClient(prefix);
+        } else if (prefix.startsWith("groww")) {
+            log.debug("Creating GrowwBrokerClient for prefix {}", prefix);
+            return new com.fnooms.broker.groww.GrowwBrokerClient(prefix);
         } else if (prefix.startsWith("mock")) {
             log.debug("Creating MockBrokerClient for prefix {}", prefix);
             return new MockBrokerClient(prefix);
